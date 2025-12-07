@@ -1,1 +1,9 @@
 thesis/
+TamperRecovery/app/build/
+TamperRecovery/.idea/
+TamperRecovery/local.properties
+TamperRecovery/gradle/
+TamperRecovery/gradlew
+TamperRecovery/gradlew.bat
+TamperRecovery/.gradle/
+
