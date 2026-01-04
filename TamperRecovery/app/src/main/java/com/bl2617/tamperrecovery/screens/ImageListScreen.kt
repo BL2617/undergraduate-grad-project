@@ -1,5 +1,8 @@
 package com.bl2617.tamperrecovery.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -9,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +29,8 @@ import coil.request.ImageRequest
 import com.bl2617.tamperrecovery.data.model.ImageData
 import com.bl2617.tamperrecovery.viewmodel.ImageListState
 import com.bl2617.tamperrecovery.viewmodel.ImageViewModel
+import com.bl2617.tamperrecovery.viewmodel.UploadState
+import java.io.File
 
 /**
  * 图片列表界面
@@ -37,13 +43,58 @@ fun ImageListScreen(
     modifier: Modifier = Modifier
 ) {
     val imageListState by viewModel.imageListState.collectAsStateWithLifecycle()
+    val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    
+    // 图片选择器
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            // 将 URI 转换为 File
+            val inputStream = context.contentResolver.openInputStream(it)
+            val fileName = getFileName(context, it) ?: "image_${System.currentTimeMillis()}.jpg"
+            val file = File(context.cacheDir, fileName)
+            
+            inputStream?.use { input ->
+                file.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            
+            // 上传文件
+            viewModel.uploadImage(file, selectedCategory)
+        }
+    }
+    
+    // 显示上传状态
+    LaunchedEffect(uploadState) {
+        when (uploadState) {
+            is UploadState.Success -> {
+                viewModel.clearUploadState()
+            }
+            is UploadState.Error -> {
+                // 错误信息可以通过 Snackbar 显示
+            }
+            else -> {}
+        }
+    }
     
     Column(modifier = modifier.fillMaxSize()) {
         // 顶部栏
         TopAppBar(
             title = { Text("图片列表") },
             actions = {
+                // 上传按钮
+                IconButton(onClick = { 
+                    imagePickerLauncher.launch("image/*")
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "上传图片"
+                    )
+                }
                 // 分类筛选按钮
                 TextButton(onClick = { 
                     selectedCategory = if (selectedCategory == null) "测试" else null
@@ -60,6 +111,39 @@ fun ImageListScreen(
                 }
             }
         )
+        
+        // 上传状态提示
+        if (uploadState is UploadState.Uploading) {
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+        
+        // 上传错误提示
+        if (uploadState is UploadState.Error) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = (uploadState as UploadState.Error).message,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    TextButton(onClick = { viewModel.clearUploadState() }) {
+                        Text("关闭")
+                    }
+                }
+            }
+        }
         
         // 内容区域
         when (val state = imageListState) {
@@ -218,5 +302,30 @@ fun ImageItem(
             }
         }
     }
+}
+
+/**
+ * 从 URI 获取文件名
+ */
+private fun getFileName(context: android.content.Context, uri: Uri): String? {
+    var result: String? = null
+    if (uri.scheme == "content") {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (nameIndex >= 0) {
+                    result = cursor.getString(nameIndex)
+                }
+            }
+        }
+    }
+    if (result == null) {
+        result = uri.path
+        val cut = result?.lastIndexOf('/')
+        if (cut != -1) {
+            result = result?.substring(cut!! + 1)
+        }
+    }
+    return result
 }
 

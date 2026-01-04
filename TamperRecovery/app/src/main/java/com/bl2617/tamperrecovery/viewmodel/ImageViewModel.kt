@@ -30,6 +30,10 @@ class ImageViewModel(
     private val _imageDetailState = MutableStateFlow<ImageDetailState>(ImageDetailState.Idle)
     val imageDetailState: StateFlow<ImageDetailState> = _imageDetailState.asStateFlow()
     
+    // 上传状态
+    private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
+    val uploadState: StateFlow<UploadState> = _uploadState.asStateFlow()
+    
     // 当前页码
     private var currentPage = 1
     private val pageSize = 20
@@ -146,6 +150,35 @@ class ImageViewModel(
         _selectedImage.value = null
         _imageDetailState.value = ImageDetailState.Idle
     }
+    
+    /**
+     * 上传图片
+     */
+    fun uploadImage(file: java.io.File, category: String? = null) {
+        viewModelScope.launch {
+            _uploadState.value = UploadState.Uploading
+            
+            repository.uploadImage(file, category).fold(
+                onSuccess = { imageData ->
+                    _uploadState.value = UploadState.Success(imageData)
+                    // 上传成功后刷新列表
+                    refreshImageList()
+                },
+                onFailure = { exception ->
+                    _uploadState.value = UploadState.Error(
+                        message = exception.message ?: "上传失败"
+                    )
+                }
+            )
+        }
+    }
+    
+    /**
+     * 清除上传状态
+     */
+    fun clearUploadState() {
+        _uploadState.value = UploadState.Idle
+    }
 }
 
 /**
@@ -170,5 +203,15 @@ sealed class ImageDetailState {
     object Loading : ImageDetailState()
     data class Success(val image: ImageData) : ImageDetailState()
     data class Error(val message: String) : ImageDetailState()
+}
+
+/**
+ * 上传状态
+ */
+sealed class UploadState {
+    object Idle : UploadState()
+    object Uploading : UploadState()
+    data class Success(val image: ImageData) : UploadState()
+    data class Error(val message: String) : UploadState()
 }
 

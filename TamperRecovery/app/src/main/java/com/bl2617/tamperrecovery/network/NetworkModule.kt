@@ -19,7 +19,8 @@ object NetworkModule {
     // 基础URL - 根据实际后端地址修改
     // 本地开发: http://192.168.0.103:8000/ (Android模拟器访问本地主机)
     // 真机测试: http://your-computer-ip:8000/ (替换为你的电脑IP地址)
-    private const val BASE_URL = "http://192.168.0.103:8000/"
+    private const val BASE_URL = "http://192.168.0.105:8000/"
+    private const val UPLOAD_BASE_URL = "http://192.168.0.105:8001/"
     
     // 是否开启日志，可以通过外部设置
     var isDebugMode: Boolean = true
@@ -88,6 +89,13 @@ object NetworkModule {
      */
     fun createApiService(baseUrl: String): ApiService {
         return createRetrofit(baseUrl).create(ApiService::class.java)
+    }
+    
+    /**
+     * 上传服务实例（使用8001端口）
+     */
+    val uploadApiService: ApiService by lazy {
+        createRetrofit(UPLOAD_BASE_URL).create(ApiService::class.java)
     }
 }
 

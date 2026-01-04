@@ -4,11 +4,8 @@ import com.bl2617.tamperrecovery.data.model.ImageListResponse
 import com.bl2617.tamperrecovery.data.model.ImageResponse
 import okhttp3.ResponseBody
 import retrofit2.Response
-import retrofit2.http.GET
-import retrofit2.http.Path
-import retrofit2.http.Query
-import retrofit2.http.Streaming
-import retrofit2.http.Url
+import okhttp3.MultipartBody
+import retrofit2.http.*
 
 /**
  * API接口定义
@@ -62,6 +59,20 @@ interface ApiService {
     suspend fun downloadImageById(
         @Path("imageId") imageId: String
     ): Response<ResponseBody>
+    
+    /**
+     * 上传图片
+     * @param file 图片文件（MultipartBody.Part）
+     * @param category 图片分类（可选）
+     * @return 上传响应
+     */
+    @Multipart
+    @POST("api/upload")
+    suspend fun uploadImage(
+        @Part file: MultipartBody.Part,
+        @Part("category") category: String? = null
+    ): Response<ImageResponse>
 }
+
 
 

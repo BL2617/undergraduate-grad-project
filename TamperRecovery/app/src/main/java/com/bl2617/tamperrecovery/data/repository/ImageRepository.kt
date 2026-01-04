@@ -9,7 +9,11 @@ import com.bl2617.tamperrecovery.network.ApiService
 import com.bl2617.tamperrecovery.network.NetworkModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.ResponseBody
+import java.io.File
 import java.io.IOException
 
 /**
@@ -17,7 +21,8 @@ import java.io.IOException
  * 封装图片相关的网络请求逻辑
  */
 class ImageRepository(
-    private val apiService: ApiService = NetworkModule.apiService
+    private val apiService: ApiService = NetworkModule.apiService,
+    private val uploadApiService: ApiService = NetworkModule.uploadApiService
 ) {
     
     /**
@@ -169,6 +174,43 @@ class ImageRepository(
             }
         }
     }
+    
+    /**
+     * 上传图片文件
+     * @param file 图片文件
+     * @param category 图片分类（可选）
+     * @return Result包装的ImageData，成功时包含上传后的图片数据，失败时包含异常信息
+     */
+    suspend fun uploadImage(file: File, category: String? = null): Result<ImageData> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // 创建请求体
+                val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+                val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+                
+                // 调用上传接口（使用上传服务）
+                val response = uploadApiService.uploadImage(body, category)
+                
+                if (response.isSuccessful && response.body() != null) {
+                    val uploadResponse = response.body()!!
+                    if (uploadResponse.code == 200 && uploadResponse.data != null) {
+                        Result.success(uploadResponse.data)
+                    } else {
+                        Result.failure(
+                            Exception("上传失败: ${uploadResponse.message}")
+                        )
+                    }
+                } else {
+                    Result.failure(
+                        Exception("网络请求失败: ${response.code()} ${response.message()}")
+                    )
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
 }
+
 
 
