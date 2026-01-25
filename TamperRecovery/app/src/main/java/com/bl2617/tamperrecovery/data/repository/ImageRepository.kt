@@ -7,6 +7,10 @@ import com.bl2617.tamperrecovery.data.model.ImageListResponse
 import com.bl2617.tamperrecovery.data.model.ImageResponse
 import com.bl2617.tamperrecovery.network.ApiService
 import com.bl2617.tamperrecovery.network.NetworkModule
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
@@ -17,8 +21,11 @@ import java.io.IOException
  * 封装图片相关的网络请求逻辑
  */
 class ImageRepository(
-    private val apiService: ApiService = NetworkModule.apiService
+    private val apiService: ApiService = NetworkModule.apiService,
+    private val token: String? = null
 ) {
+    /** 构造带 Bearer 前缀的 Authorization 头 */
+    private fun bearer(): String? = token?.let { "Bearer $it" }
     
     /**
      * 根据ID获取图片信息
@@ -28,7 +35,11 @@ class ImageRepository(
     suspend fun getImageById(imageId: String): Result<ImageData> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = apiService.getImageById(imageId)
+                val response = if (token != null) {
+                    apiService.getImageById(imageId, bearer())
+                } else {
+                    apiService.getImageById(imageId)
+                }
                 if (response.isSuccessful && response.body() != null) {
                     val imageResponse = response.body()!!
                     if (imageResponse.code == 200 && imageResponse.data != null) {
@@ -63,7 +74,11 @@ class ImageRepository(
     ): Result<ImageListResponse> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = apiService.getImageList(page, pageSize, category)
+                val response = if (token != null) {
+                    apiService.getImageList(page, pageSize, category, bearer())
+                } else {
+                    apiService.getImageList(page, pageSize, category)
+                }
                 if (response.isSuccessful && response.body() != null) {
                     val listResponse = response.body()!!
                     if (listResponse.code == 200) {
@@ -116,6 +131,53 @@ class ImageRepository(
     }
     
     /**
+     * 上传图片
+     */
+    suspend fun uploadImage(
+        fileName: String,
+        bytes: ByteArray,
+        category: String? = null,
+        key: String? = null,
+        encryptKey: String? = null
+    ): Result<ImageResponse> {
+        if (token == null) return Result.failure(Exception("需要认证 Token 才能上传图片"))
+
+        return withContext(Dispatchers.IO) {
+            try {
+                val imageRequestBody: RequestBody =
+                    bytes.toRequestBody("image/*".toMediaType())
+                val filePart = MultipartBody.Part.createFormData(
+                    name = "file",
+                    filename = fileName,
+                    body = imageRequestBody
+                )
+
+                val categoryBody = category?.toRequestBody("text/plain".toMediaType())
+                val keyBody = key?.toRequestBody("text/plain".toMediaType())
+                val encryptKeyBody = encryptKey?.toRequestBody("text/plain".toMediaType())
+
+                val response = apiService.uploadImage(
+                    token = bearer()!!,
+                    file = filePart,
+                    category = categoryBody,
+                    key = keyBody,
+                    encryptKey = encryptKeyBody
+                )
+
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    Result.failure(
+                        Exception("上传失败: ${response.code()} ${response.message()}")
+                    )
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+
+    /**
      * 通过图片ID下载图片为Bitmap
      * @param imageId 图片ID
      * @return Result包装的Bitmap，成功时包含图片Bitmap，失败时包含异常信息
@@ -123,7 +185,12 @@ class ImageRepository(
     suspend fun downloadImageByIdAsBitmap(imageId: String): Result<Bitmap> {
         return withContext(Dispatchers.IO) {
             try {
-                val response = apiService.downloadImageById(imageId)
+                if (token == null) {
+                    return@withContext Result.failure(
+                        Exception("需要认证Token才能下载图片")
+                    )
+                }
+                val response = apiService.downloadImageById(imageId, bearer()!!)
                 if (response.isSuccessful && response.body() != null) {
                     val body: ResponseBody = response.body()!!
                     val inputStream = body.byteStream()

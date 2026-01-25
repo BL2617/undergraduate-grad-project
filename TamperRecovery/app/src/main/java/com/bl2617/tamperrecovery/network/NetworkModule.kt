@@ -18,9 +18,11 @@ object NetworkModule {
     
     // 基础URL - 根据实际后端地址修改
     // 本地开发: http://192.168.0.103:8000/ (Android模拟器访问本地主机)
-    // 真机测试: http://your-computer-ip:8000/ (替换为你的电脑IP地址)
-    private const val BASE_URL = "http://192.168.0.103:8000/"
-    
+    // 真机测试（热点连接）: http://192.168.137.1:8000/ (Windows热点默认IP)
+    // 真机测试（同一WiFi）: http://your-computer-ip:8000/ (替换为你的电脑IP地址)
+    // 获取IP方法：Windows执行 ipconfig，查找"IPv4 地址"
+    private const val BASE_URL = "http://192.168.0.122:8000/"
+
     // 是否开启日志，可以通过外部设置
     var isDebugMode: Boolean = true
     
@@ -83,11 +85,54 @@ object NetworkModule {
     }
     
     /**
+     * 认证API服务实例（单例）
+     */
+    val authApiService: com.bl2617.tamperrecovery.network.AuthApiService by lazy {
+        createRetrofit().create(com.bl2617.tamperrecovery.network.AuthApiService::class.java)
+    }
+    
+    /**
      * 创建自定义基础URL的API服务
      * @param baseUrl 自定义的基础URL
      */
     fun createApiService(baseUrl: String): ApiService {
         return createRetrofit(baseUrl).create(ApiService::class.java)
+    }
+    
+    /**
+     * 创建带认证拦截器的Retrofit（用于需要Token的请求）
+     */
+    private fun createAuthenticatedRetrofit(token: String, baseUrl: String = BASE_URL): Retrofit {
+        val authInterceptor = okhttp3.Interceptor { chain ->
+            val request = chain.request().newBuilder()
+                .addHeader("Authorization", "Bearer $token")
+                .build()
+            chain.proceed(request)
+        }
+        
+        val client = createOkHttpClient().newBuilder()
+            .addInterceptor(authInterceptor)
+            .build()
+        
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create(createGson()))
+            .build()
+    }
+    
+    /**
+     * 创建带认证的API服务
+     */
+    fun createAuthenticatedApiService(token: String): ApiService {
+        return createAuthenticatedRetrofit(token).create(ApiService::class.java)
+    }
+    
+    /**
+     * 创建带认证的Auth API服务
+     */
+    fun createAuthenticatedAuthApiService(token: String): com.bl2617.tamperrecovery.network.AuthApiService {
+        return createAuthenticatedRetrofit(token).create(com.bl2617.tamperrecovery.network.AuthApiService::class.java)
     }
 }
 

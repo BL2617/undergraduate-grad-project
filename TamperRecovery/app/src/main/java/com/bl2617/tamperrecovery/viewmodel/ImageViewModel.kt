@@ -1,22 +1,35 @@
 package com.bl2617.tamperrecovery.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bl2617.tamperrecovery.data.model.ImageData
 import com.bl2617.tamperrecovery.data.model.ImageListResponse
 import com.bl2617.tamperrecovery.data.repository.ImageRepository
+import com.bl2617.tamperrecovery.utils.AuthManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import android.net.Uri
+import android.provider.OpenableColumns
+import java.io.ByteArrayOutputStream
 
 /**
  * 图片ViewModel
  * 管理图片列表和详情的数据状态
  */
 class ImageViewModel(
-    private val repository: ImageRepository = ImageRepository()
+    private val context: Context,
+    token: String? = AuthManager.getToken(context)
 ) : ViewModel() {
+    
+    init {
+        android.util.Log.d("ImageViewModel", "ImageViewModel created with token: ${if (token != null) "present (${token.take(20)}...)" else "null"}")
+    }
+    
+    private val repository: ImageRepository = ImageRepository(token = token)
     
     // 图片列表状态
     private val _imageListState = MutableStateFlow<ImageListState>(ImageListState.Loading)
@@ -34,6 +47,10 @@ class ImageViewModel(
     private var currentPage = 1
     private val pageSize = 20
     private var currentCategory: String? = null
+    
+    // 上传状态
+    private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
+    val uploadState: StateFlow<UploadState> = _uploadState.asStateFlow()
     
     init {
         loadImageList()
@@ -146,6 +163,71 @@ class ImageViewModel(
         _selectedImage.value = null
         _imageDetailState.value = ImageDetailState.Idle
     }
+
+    /**
+     * 上传图片
+     */
+    fun uploadImage(
+        uri: Uri,
+        category: String? = null,
+        key: String? = null,
+        encryptKey: String? = null
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _uploadState.value = UploadState.Uploading
+
+                val fileName = queryFileName(uri) ?: "upload.jpg"
+                val bytes = readBytes(uri) ?: throw IllegalArgumentException("无法读取文件内容")
+
+                repository.uploadImage(
+                    fileName = fileName,
+                    bytes = bytes,
+                    category = category,
+                    key = key,
+                    encryptKey = encryptKey
+                ).fold(
+                    onSuccess = { resp ->
+                        _uploadState.value = UploadState.Success(resp)
+                        // 上传成功后刷新列表
+                        loadImageList(page = 1, category = currentCategory, refresh = true)
+                    },
+                    onFailure = { e ->
+                        _uploadState.value = UploadState.Error(e.message ?: "上传失败")
+                    }
+                )
+            } catch (e: Exception) {
+                _uploadState.value = UploadState.Error(e.message ?: "上传失败")
+            }
+        }
+    }
+
+    private fun readBytes(uri: Uri): ByteArray? {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                val buffer = ByteArrayOutputStream()
+                val data = ByteArray(1024)
+                var nRead: Int
+                while (input.read(data).also { nRead = it } != -1) {
+                    buffer.write(data, 0, nRead)
+                }
+                buffer.toByteArray()
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun queryFileName(uri: Uri): String? {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        cursor?.use {
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (nameIndex >= 0 && it.moveToFirst()) {
+                return it.getString(nameIndex)
+            }
+        }
+        return null
+    }
 }
 
 /**
@@ -170,5 +252,15 @@ sealed class ImageDetailState {
     object Loading : ImageDetailState()
     data class Success(val image: ImageData) : ImageDetailState()
     data class Error(val message: String) : ImageDetailState()
+}
+
+/**
+ * 上传状态
+ */
+sealed class UploadState {
+    object Idle : UploadState()
+    object Uploading : UploadState()
+    data class Success(val response: com.bl2617.tamperrecovery.data.model.ImageResponse) : UploadState()
+    data class Error(val message: String) : UploadState()
 }
 
