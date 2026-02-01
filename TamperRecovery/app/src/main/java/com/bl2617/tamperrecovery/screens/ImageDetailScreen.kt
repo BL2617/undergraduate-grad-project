@@ -1,12 +1,40 @@
 package com.bl2617.tamperrecovery.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -14,17 +42,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import coil.ImageLoader
+import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import coil.util.DebugLogger
 import com.bl2617.tamperrecovery.data.model.ImageData
 import com.bl2617.tamperrecovery.network.NetworkModule
 import com.bl2617.tamperrecovery.utils.AuthManager
 import com.bl2617.tamperrecovery.viewmodel.ImageDetailState
 import com.bl2617.tamperrecovery.viewmodel.ImageViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 /**
  * 图片详情界面
@@ -35,9 +63,17 @@ fun ImageDetailScreen(
     imageId: String,
     viewModel: ImageViewModel,
     onBack: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val imageDetailState by viewModel.imageDetailState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    
+    // 用户菜单状态
+    var showUserMenu by remember { mutableStateOf(false) }
+    
+    // 获取当前用户名
+    val currentUsername = remember { AuthManager.getUsername(context) ?: "用户" }
     
     LaunchedEffect(imageId) {
         viewModel.loadImageDetail(imageId)
@@ -50,9 +86,85 @@ fun ImageDetailScreen(
             navigationIcon = {
                 IconButton(onClick = onBack) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.Filled.ArrowBack,
                         contentDescription = "返回"
                     )
+                }
+            },
+            actions = {
+                // 用户菜单按钮
+                Box {
+                    IconButton(onClick = { showUserMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.AccountCircle,
+                            contentDescription = "用户菜单"
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showUserMenu,
+                        onDismissRequest = { showUserMenu = false }
+                    ) {
+                        // 显示当前用户名
+                        DropdownMenuItem(
+                            text = { 
+                                Column {
+                                    Text(
+                                        text = currentUsername,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "已登录",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            },
+                            onClick = { showUserMenu = false },
+                            enabled = false
+                        )
+                        Divider()
+                        // 切换账号
+                        DropdownMenuItem(
+                            text = { 
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.SwapHoriz,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text("切换账号")
+                                }
+                            },
+                            onClick = {
+                                showUserMenu = false
+                                onLogout()
+                            }
+                        )
+                        // 退出登录
+                        DropdownMenuItem(
+                            text = { 
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.ExitToApp,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text("退出登录")
+                                }
+                            },
+                            onClick = {
+                                showUserMenu = false
+                                onLogout()
+                            }
+                        )
+                    }
                 }
             }
         )

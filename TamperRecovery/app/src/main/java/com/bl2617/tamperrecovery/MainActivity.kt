@@ -77,7 +77,12 @@ fun TamperRecoveryApp() {
                     ImageDetailScreen(
                         imageId = selectedImageId!!,
                         viewModel = viewModel,
-                        onBack = { selectedImageId = null }
+                        onBack = { selectedImageId = null },
+                        onLogout = {
+                            // 退出登录：清除认证信息并返回登录界面
+                            authViewModel.logout()
+                            isLoggedIn = false
+                        }
                     )
                 }
                 else -> {
@@ -85,6 +90,11 @@ fun TamperRecoveryApp() {
                         viewModel = viewModel,
                         onImageClick = { image: ImageData ->
                             selectedImageId = image.id
+                        },
+                        onLogout = {
+                            // 退出登录：清除认证信息并返回登录界面
+                            authViewModel.logout()
+                            isLoggedIn = false
                         }
                     )
                 }
