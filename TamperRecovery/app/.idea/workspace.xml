@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="d8dc8c7e-81b6-4bab-b789-5d52a6b7b555" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/MainActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/data/model/AuthModels.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/data/model/AuthModels.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/data/model/OperationLog.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/data/model/OperationLog.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/data/model/TamperDetection.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/data/model/TamperDetection.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/data/repository/ImageRepository.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/data/repository/ImageRepository.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/network/ApiService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/network/ApiService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/network/AuthApiService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/network/AuthApiService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/network/NetworkModule.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/network/NetworkModule.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/screens/ImageDetailScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/screens/ImageDetailScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/screens/ImageListScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/screens/ImageListScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/screens/LoginScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/screens/LoginScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/utils/AuthManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/utils/AuthManager.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/viewmodel/AuthViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/viewmodel/AuthViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/viewmodel/ImageViewModel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/bl2617/tamperrecovery/viewmodel/ImageViewModel.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../gradle/libs.versions.toml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7
+}]]></component>
+  <component name="ProjectId" id="393FUZVhlo6BtbzpANXTWgMlNcB" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "android.gradle.sync.needed": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/work/learn/ImageTamperRecovery/undergraduate-grad-project/TamperRecovery/app"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d8dc8c7e-81b6-4bab-b789-5d52a6b7b555" name="Changes" comment="" />
+      <created>1769916863953</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1769916863953</updated>
+    </task>
+    <servers />
+  </component>
+</project>

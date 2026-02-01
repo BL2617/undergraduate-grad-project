@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshotFlow
@@ -26,9 +25,6 @@ import coil.request.ImageRequest
 import com.bl2617.tamperrecovery.data.model.ImageData
 import com.bl2617.tamperrecovery.viewmodel.ImageListState
 import com.bl2617.tamperrecovery.viewmodel.ImageViewModel
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import com.bl2617.tamperrecovery.viewmodel.UploadState
 
 /**
  * 图片列表界面
@@ -42,17 +38,6 @@ fun ImageListScreen(
 ) {
     val imageListState by viewModel.imageListState.collectAsStateWithLifecycle()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    val uploadState by viewModel.uploadState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
-    // 选择图片
-    val picker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) {
-            viewModel.uploadImage(uri = uri)
-        }
-    }
     
     Column(modifier = modifier.fillMaxSize()) {
         // 顶部栏
@@ -93,15 +78,7 @@ fun ImageListScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("暂无图片")
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Button(onClick = { picker.launch("image/*") }) {
-                                Icon(Icons.Default.Upload, contentDescription = "上传")
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("上传图片")
-                            }
-                        }
+                        Text("暂无图片")
                     }
                 } else {
                     val gridState = rememberLazyGridState()
@@ -177,36 +154,6 @@ fun ImageListScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
-                }
-            }
-        }
-    }
-
-    // 上传浮动按钮
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomEnd
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.End
-        ) {
-            if (uploadState is UploadState.Uploading) {
-                ExtendedFloatingActionButton(
-                    onClick = { },
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary,
-                    icon = { CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp) },
-                    text = { Text("正在上传...") },
-                    expanded = true
-                )
-            } else {
-                FloatingActionButton(
-                    onClick = { picker.launch("image/*") },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(Icons.Default.Upload, contentDescription = "上传图片")
                 }
             }
         }

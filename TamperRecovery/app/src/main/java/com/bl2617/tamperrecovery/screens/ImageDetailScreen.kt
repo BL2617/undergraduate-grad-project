@@ -15,8 +15,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.ImageLoader
 import coil.request.ImageRequest
+import coil.util.DebugLogger
 import com.bl2617.tamperrecovery.data.model.ImageData
+import com.bl2617.tamperrecovery.network.NetworkModule
+import com.bl2617.tamperrecovery.utils.AuthManager
 import com.bl2617.tamperrecovery.viewmodel.ImageDetailState
 import com.bl2617.tamperrecovery.viewmodel.ImageViewModel
 import java.text.SimpleDateFormat
@@ -107,6 +111,17 @@ fun ImageDetailContent(
     image: ImageData,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    
+    // 创建带认证的 ImageLoader
+    val imageLoader = remember {
+        val token = AuthManager.getToken(context)
+        val okHttpClient = NetworkModule.createAuthenticatedOkHttpClient(token)
+        ImageLoader.Builder(context)
+            .okHttpClient(okHttpClient)
+            .build()
+    }
+    
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -114,11 +129,12 @@ fun ImageDetailContent(
     ) {
         // 图片
         AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
+            model = ImageRequest.Builder(context)
                 .data(image.url)
                 .crossfade(true)
                 .build(),
             contentDescription = image.id,
+            imageLoader = imageLoader,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(

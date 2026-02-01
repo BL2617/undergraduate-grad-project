@@ -9,14 +9,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
 import com.bl2617.tamperrecovery.data.model.ImageData
 import com.bl2617.tamperrecovery.network.NetworkModule
 import com.bl2617.tamperrecovery.screens.ImageDetailScreen
 import com.bl2617.tamperrecovery.screens.ImageListScreen
 import com.bl2617.tamperrecovery.screens.LoginScreen
 import com.bl2617.tamperrecovery.ui.theme.TamperRecoveryTheme
-import com.bl2617.tamperrecovery.viewmodel.AuthState
+import com.bl2617.tamperrecovery.utils.AuthManager
 import com.bl2617.tamperrecovery.viewmodel.AuthViewModel
 import com.bl2617.tamperrecovery.viewmodel.ImageViewModel
 
@@ -43,48 +43,52 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TamperRecoveryApp() {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
+    
+    // 检查登录状态
+    var isLoggedIn by remember { mutableStateOf(AuthManager.isLoggedIn(context)) }
+    
+    // 创建 ViewModel
     val authViewModel = remember { AuthViewModel(context) }
-    val authState by authViewModel.authState.collectAsStateWithLifecycle()
-    
-    when (authState) {
-        is AuthState.Authenticated -> {
-            // 已登录，显示主界面
-            MainApp(authViewModel)
-        }
-        is AuthState.Unauthenticated -> {
-            // 未登录，显示登录界面
-            LoginScreen(viewModel = authViewModel)
+    val imageViewModel = remember(isLoggedIn) {
+        if (isLoggedIn) {
+            ImageViewModel(context)
+        } else {
+            null
         }
     }
-}
-
-@Composable
-fun MainApp(authViewModel: AuthViewModel) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val authState by authViewModel.authState.collectAsStateWithLifecycle()
     
-    // 当认证状态改变时，重新创建 ImageViewModel 以获取最新的 Token
-    val imageViewModel = remember(authState) { 
-        ImageViewModel(context)
-    }
     var selectedImageId by remember { mutableStateOf<String?>(null) }
     
-    when {
-        selectedImageId != null -> {
-            ImageDetailScreen(
-                imageId = selectedImageId!!,
-                viewModel = imageViewModel,
-                onBack = { selectedImageId = null }
-            )
-        }
-        else -> {
-            ImageListScreen(
-                viewModel = imageViewModel,
-                onImageClick = { image: ImageData ->
-                    selectedImageId = image.id
+    // 根据登录状态显示不同界面
+    if (!isLoggedIn) {
+        // 显示登录界面
+        LoginScreen(
+            viewModel = authViewModel,
+            onLoginSuccess = {
+                isLoggedIn = true
+            }
+        )
+    } else {
+        // 显示主界面
+        imageViewModel?.let { viewModel ->
+            when {
+                selectedImageId != null -> {
+                    ImageDetailScreen(
+                        imageId = selectedImageId!!,
+                        viewModel = viewModel,
+                        onBack = { selectedImageId = null }
+                    )
                 }
-            )
+                else -> {
+                    ImageListScreen(
+                        viewModel = viewModel,
+                        onImageClick = { image: ImageData ->
+                            selectedImageId = image.id
+                        }
+                    )
+                }
+            }
         }
     }
 }
