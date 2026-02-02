@@ -9,7 +9,12 @@ import com.bl2617.tamperrecovery.network.ApiService
 import com.bl2617.tamperrecovery.network.NetworkModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
+import java.io.File
 import java.io.IOException
 
 /**
@@ -174,6 +179,53 @@ class ImageRepository(
                 } else {
                     Result.failure(
                         Exception("下载图片失败: ${response.code()} ${response.message()}")
+                    )
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
+    
+    /**
+     * 上传图片
+     * @param imageFile 图片文件
+     * @param category 图片分类（可选）
+     * @param key 水印密钥（可选）
+     * @param encryptKey 加密密钥（可选）
+     * @return Result包装的ImageData，成功时包含上传后的图片数据，失败时包含异常信息
+     */
+    suspend fun uploadImage(
+        imageFile: File,
+        category: String? = null,
+        key: String? = null,
+        encryptKey: String? = null
+    ): Result<ImageData> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // 创建文件请求体
+                val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+                val filePart = MultipartBody.Part.createFormData("file", imageFile.name, requestFile)
+                
+                // 创建其他字段的请求体
+                val categoryPart = category?.toRequestBody("text/plain".toMediaTypeOrNull())
+                val keyPart = key?.toRequestBody("text/plain".toMediaTypeOrNull())
+                val encryptKeyPart = encryptKey?.toRequestBody("text/plain".toMediaTypeOrNull())
+                
+                val response = apiService.uploadImage(filePart, categoryPart, keyPart, encryptKeyPart)
+                
+                if (response.isSuccessful && response.body() != null) {
+                    val imageResponse = response.body()!!
+                    if (imageResponse.code == 200 && imageResponse.data != null) {
+                        Result.success(imageResponse.data)
+                    } else {
+                        Result.failure(
+                            Exception("上传图片失败: ${imageResponse.message}")
+                        )
+                    }
+                } else {
+                    Result.failure(
+                        Exception("网络请求失败: ${response.code()} ${response.message()}")
                     )
                 }
             } catch (e: Exception) {

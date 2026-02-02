@@ -39,6 +39,10 @@ class ImageViewModel(
     private val _imageDetailState = MutableStateFlow<ImageDetailState>(ImageDetailState.Idle)
     val imageDetailState: StateFlow<ImageDetailState> = _imageDetailState.asStateFlow()
     
+    // 上传状态
+    private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
+    val uploadState: StateFlow<UploadState> = _uploadState.asStateFlow()
+    
     // 当前页码
     private var currentPage = 1
     private val pageSize = 20
@@ -158,6 +162,45 @@ class ImageViewModel(
         _selectedImage.value = null
         _imageDetailState.value = ImageDetailState.Idle
     }
+    
+    /**
+     * 清除所有状态（用于退出登录时）
+     */
+    fun clearAllState() {
+        _imageListState.value = ImageListState.Loading
+        _selectedImage.value = null
+        _imageDetailState.value = ImageDetailState.Idle
+        _uploadState.value = UploadState.Idle
+        currentPage = 1
+        currentCategory = null
+    }
+    
+    /**
+     * 上传图片
+     */
+    fun uploadImage(imageFile: java.io.File, category: String? = null, key: String? = null, encryptKey: String? = null) {
+        viewModelScope.launch {
+            _uploadState.value = UploadState.Loading
+            try {
+                repository.uploadImage(imageFile, category, key, encryptKey).fold(
+                    onSuccess = { imageData ->
+                        _uploadState.value = UploadState.Success(imageData)
+                        // 上传成功后刷新图片列表
+                        refreshImageList()
+                    },
+                    onFailure = { exception ->
+                        _uploadState.value = UploadState.Error(
+                            message = exception.message ?: "上传失败"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uploadState.value = UploadState.Error(
+                    message = e.message ?: "上传失败"
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -182,5 +225,15 @@ sealed class ImageDetailState {
     object Loading : ImageDetailState()
     data class Success(val image: ImageData) : ImageDetailState()
     data class Error(val message: String) : ImageDetailState()
+}
+
+/**
+ * 上传状态
+ */
+sealed class UploadState {
+    object Idle : UploadState()
+    object Loading : UploadState()
+    data class Success(val image: ImageData) : UploadState()
+    data class Error(val message: String) : UploadState()
 }
 

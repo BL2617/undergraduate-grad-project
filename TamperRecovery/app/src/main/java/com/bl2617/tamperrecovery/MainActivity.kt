@@ -50,6 +50,8 @@ fun TamperRecoveryApp() {
     
     // 创建 ViewModel
     val authViewModel = remember { AuthViewModel(context) }
+    
+    // 使用 key 确保每次登录状态改变时都创建新的 ImageViewModel
     val imageViewModel = remember(isLoggedIn) {
         if (isLoggedIn) {
             ImageViewModel(context)
@@ -59,6 +61,13 @@ fun TamperRecoveryApp() {
     }
     
     var selectedImageId by remember { mutableStateOf<String?>(null) }
+    
+    // 当退出登录时，清除选中的图片ID
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) {
+            selectedImageId = null
+        }
+    }
     
     // 根据登录状态显示不同界面
     if (!isLoggedIn) {
@@ -79,7 +88,8 @@ fun TamperRecoveryApp() {
                         viewModel = viewModel,
                         onBack = { selectedImageId = null },
                         onLogout = {
-                            // 退出登录：清除认证信息并返回登录界面
+                            // 退出登录：清除 ViewModel 状态、认证信息并返回登录界面
+                            viewModel.clearAllState()
                             authViewModel.logout()
                             isLoggedIn = false
                         }
@@ -92,7 +102,8 @@ fun TamperRecoveryApp() {
                             selectedImageId = image.id
                         },
                         onLogout = {
-                            // 退出登录：清除认证信息并返回登录界面
+                            // 退出登录：清除 ViewModel 状态、认证信息并返回登录界面
+                            viewModel.clearAllState()
                             authViewModel.logout()
                             isLoggedIn = false
                         }

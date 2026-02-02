@@ -3,8 +3,12 @@ package com.bl2617.tamperrecovery.network
 import com.bl2617.tamperrecovery.data.model.ImageListResponse
 import com.bl2617.tamperrecovery.data.model.ImageResponse
 import okhttp3.ResponseBody
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.GET
+import retrofit2.http.Multipart
+import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.Streaming
@@ -62,6 +66,23 @@ interface ApiService {
     suspend fun downloadImageById(
         @Path("imageId") imageId: String
     ): Response<ResponseBody>
+    
+    /**
+     * 上传图片
+     * @param file 图片文件
+     * @param category 图片分类（可选）
+     * @param key 水印密钥（可选）
+     * @param encryptKey 加密密钥（可选）
+     * @return 图片响应数据
+     */
+    @Multipart
+    @POST("api/upload")
+    suspend fun uploadImage(
+        @Part file: MultipartBody.Part,
+        @Part("category") category: okhttp3.RequestBody? = null,
+        @Part("key") key: okhttp3.RequestBody? = null,
+        @Part("encryptKey") encryptKey: okhttp3.RequestBody? = null
+    ): Response<ImageResponse>
 }
 
 
