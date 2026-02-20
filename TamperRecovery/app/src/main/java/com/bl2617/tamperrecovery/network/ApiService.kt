@@ -5,6 +5,7 @@ import com.bl2617.tamperrecovery.data.model.ImageResponse
 import okhttp3.ResponseBody
 import okhttp3.MultipartBody
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
@@ -83,6 +84,80 @@ interface ApiService {
         @Part("key") key: okhttp3.RequestBody? = null,
         @Part("encryptKey") encryptKey: okhttp3.RequestBody? = null
     ): Response<ImageResponse>
+    
+    /**
+     * LSB水印检测（方式1）
+     * @param file 待检测的图片文件
+     * @param key 用户密钥
+     * @return 检测结果
+     */
+    @Multipart
+    @POST("api/detection/lsb")
+    suspend fun detectLSB(
+        @Part file: MultipartBody.Part,
+        @Part("key") key: okhttp3.RequestBody
+    ): Response<com.bl2617.tamperrecovery.data.model.DetectionResponse>
+    
+    /**
+     * 分块比对检测（方式2）
+     * @param originalImageId 原图ID
+     * @param file 待检测的图片文件
+     * @param blockSize 块大小（默认64）
+     * @param threshold 差异阈值（默认0.1）
+     * @return 检测结果
+     */
+    @Multipart
+    @POST("api/detection/compare")
+    suspend fun detectCompare(
+        @Part("original_image_id") originalImageId: okhttp3.RequestBody,
+        @Part file: MultipartBody.Part,
+        @Part("block_size") blockSize: okhttp3.RequestBody? = null,
+        @Part("threshold") threshold: okhttp3.RequestBody? = null
+    ): Response<com.bl2617.tamperrecovery.data.model.BlockComparisonResponse>
+    
+    /**
+     * 模型检测（方式3）
+     * @param file 待检测的图片文件
+     * @param confidenceThreshold 置信度阈值（默认0.5）
+     * @return 检测结果
+     */
+    @Multipart
+    @POST("api/detection/model")
+    suspend fun detectModel(
+        @Part file: MultipartBody.Part,
+        @Part("confidence_threshold") confidenceThreshold: okhttp3.RequestBody? = null
+    ): Response<com.bl2617.tamperrecovery.data.model.DetectionResponse>
+    
+    /**
+     * 获取可视化图片
+     * @param detectionResultId 检测结果ID
+     * @return 可视化图片二进制数据
+     */
+    @Streaming
+    @GET("api/detection/visualization/{detectionResultId}")
+    suspend fun getVisualization(
+        @Path("detectionResultId") detectionResultId: String
+    ): Response<ResponseBody>
+    
+    /**
+     * 获取被篡改的块信息
+     * @param detectionResultId 检测结果ID
+     * @return 块信息列表
+     */
+    @GET("api/recovery/blocks/{detectionResultId}")
+    suspend fun getTamperedBlocks(
+        @Path("detectionResultId") detectionResultId: String
+    ): Response<com.bl2617.tamperrecovery.data.model.TamperedBlocksResponse>
+    
+    /**
+     * 恢复被篡改的块
+     * @param request 恢复请求
+     * @return 恢复数据
+     */
+    @POST("api/recovery/restore-blocks")
+    suspend fun restoreBlocks(
+        @Body request: com.bl2617.tamperrecovery.data.model.RestoreBlocksRequest
+    ): Response<com.bl2617.tamperrecovery.data.model.RestoreBlocksResponse>
 }
 
 

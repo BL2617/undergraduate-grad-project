@@ -20,7 +20,7 @@ object NetworkModule {
     // 基础URL - 根据实际后端地址修改
     // 本地开发: http://192.168.0.103:8000/ (Android模拟器访问本地主机)
     // 真机测试: http://your-computer-ip:8000/ (替换为你的电脑IP地址)
-    private const val BASE_URL = "http://192.168.0.123:8000/"
+    private const val BASE_URL = "http://192.168.93.1:8000/"
     
     // 是否开启日志，可以通过外部设置
     var isDebugMode: Boolean = true
