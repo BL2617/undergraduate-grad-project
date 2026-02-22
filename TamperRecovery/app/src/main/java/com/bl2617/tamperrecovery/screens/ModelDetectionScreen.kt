@@ -30,6 +30,11 @@ fun ModelDetectionScreen(
     val context = LocalContext.current
     var selectedFile by remember { mutableStateOf<File?>(null) }
     var confidenceThreshold by remember { mutableStateOf("0.5") }
+
+    // 进入页面时清理上一次检测状态
+    LaunchedEffect(Unit) {
+        viewModel.clearModelState()
+    }
     
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()

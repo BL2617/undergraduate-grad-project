@@ -33,12 +33,12 @@ fun CompareDetectionScreen(
     
     var selectedOriginalImage by remember { mutableStateOf<ImageData?>(null) }
     var selectedFile by remember { mutableStateOf<File?>(null) }
-    var blockSize by remember { mutableStateOf("64") }
     var threshold by remember { mutableStateOf("0.1") }
     var showImageSelector by remember { mutableStateOf(false) }
     
-    // 加载图片列表
+    // 进入页面时清理上一次检测状态，并加载图片列表
     LaunchedEffect(Unit) {
+        viewModel.clearCompareState()
         viewModel.loadImageListForSelection()
     }
     
@@ -117,20 +117,11 @@ fun CompareDetectionScreen(
                 )
             }
             
-            // 块大小
-            OutlinedTextField(
-                value = blockSize,
-                onValueChange = { blockSize = it },
-                label = { Text("块大小（默认64）") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
             // 阈值
             OutlinedTextField(
                 value = threshold,
                 onValueChange = { threshold = it },
-                label = { Text("差异阈值（默认0.1）") },
+                label = { Text("差异阈值") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -139,13 +130,11 @@ fun CompareDetectionScreen(
             Button(
                 onClick = {
                     if (selectedOriginalImage != null && selectedFile != null) {
-                        val blockSizeInt = blockSize.toIntOrNull() ?: 64
                         val thresholdFloat = threshold.toFloatOrNull() ?: 0.1f
                         viewModel.detectCompare(
                             selectedOriginalImage!!.id!!,
                             selectedFile!!,
-                            blockSizeInt,
-                            thresholdFloat
+                            threshold = thresholdFloat
                         )
                     }
                 },

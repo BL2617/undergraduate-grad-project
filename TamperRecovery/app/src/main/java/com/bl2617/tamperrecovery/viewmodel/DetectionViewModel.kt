@@ -154,6 +154,26 @@ class DetectionViewModel(
         _visualizationState.value = VisualizationState.Idle
         _imageListForSelection.value = emptyList()
     }
+
+    fun clearLsbState() {
+        _lsbDetectionState.value = DetectionState.Idle
+    }
+
+    fun clearCompareState() {
+        _compareDetectionState.value = DetectionState.Idle
+    }
+
+    fun clearModelState() {
+        _modelDetectionState.value = DetectionState.Idle
+    }
+
+    fun clearVisualizationState() {
+        _visualizationState.value = VisualizationState.Idle
+    }
+
+    fun clearImageListForSelection() {
+        _imageListForSelection.value = emptyList()
+    }
 }
 
 /**

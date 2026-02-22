@@ -30,6 +30,11 @@ fun LSBDetectionScreen(
     val context = LocalContext.current
     var key by remember { mutableStateOf("") }
     var selectedFile by remember { mutableStateOf<File?>(null) }
+
+    // 进入页面时清理上一次检测状态
+    LaunchedEffect(Unit) {
+        viewModel.clearLsbState()
+    }
     
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -72,7 +77,7 @@ fun LSBDetectionScreen(
             OutlinedTextField(
                 value = key,
                 onValueChange = { key = it },
-                label = { Text("用户密钥") },
+                label = { Text("用户密钥（可选）") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -97,12 +102,12 @@ fun LSBDetectionScreen(
             // 开始检测按钮
             Button(
                 onClick = {
-                    if (selectedFile != null && key.isNotBlank()) {
+                    if (selectedFile != null) {
                         viewModel.detectLSB(selectedFile!!, key)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = selectedFile != null && key.isNotBlank() && detectionState !is DetectionState.Loading
+                enabled = selectedFile != null && detectionState !is DetectionState.Loading
             ) {
                 if (detectionState is DetectionState.Loading) {
                     CircularProgressIndicator(

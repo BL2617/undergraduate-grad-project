@@ -107,7 +107,11 @@ fun TamperRecoveryApp() {
                     DetectionResultScreen(
                         result = detectionResult!!,
                         viewModel = detViewModel,
-                        onBack = { detectionResult = null }
+                        onBack = {
+                            detectionResult = null
+                            // 清理检测状态，避免再次进入检测界面时仍保留上一次的 Success 状态
+                            detViewModel.clearAllState()
+                        }
                     )
                 } else {
                     // 检测功能子界面
