@@ -19,7 +19,7 @@ import java.io.File
  * 管理检测相关的数据状态
  */
 class DetectionViewModel(
-    context: Context? = null
+    private val context: Context? = null
 ) : ViewModel() {
     
     private val detectionRepository: DetectionRepository = if (context != null) {
@@ -55,6 +55,10 @@ class DetectionViewModel(
     // 图片列表（用于分块比对时选择原图）
     private val _imageListForSelection = MutableStateFlow<List<ImageData>>(emptyList())
     val imageListForSelection: StateFlow<List<ImageData>> = _imageListForSelection.asStateFlow()
+    
+    // 检测历史状态
+    private val _detectionHistoryState = MutableStateFlow<DetectionHistoryState>(DetectionHistoryState.Idle)
+    val detectionHistoryState: StateFlow<DetectionHistoryState> = _detectionHistoryState.asStateFlow()
     
     /**
      * LSB检测
@@ -112,6 +116,164 @@ class DetectionViewModel(
     }
     
     /**
+     * LSB水印检测（从URI）
+     */
+    fun detectLSBWatermark(uri: android.net.Uri, key: String = "", callback: (DetectionResultData) -> Unit) {
+        viewModelScope.launch {
+            if (context != null) {
+                val imageFile = createTempFileFromUri(context, uri, "temp_image_", ".jpg")
+                if (imageFile != null) {
+                    detectionRepository.detectLSB(imageFile, key).fold(
+                        onSuccess = { result ->
+                            callback(result)
+                        },
+                        onFailure = { exception ->
+                            // 创建一个错误的结果对象
+                            val errorResult = DetectionResultData(
+                                id = "error",
+                                detectionType = "lsb",
+                                originalImageId = null,
+                                detectedImageId = null,
+                                isTampered = false,
+                                tamperRatio = null,
+                                tamperRatioPercent = 0.0f,
+                                confidence = null,
+                                tamperedRegions = null,
+                                visualizationUrl = null,
+                                createdAt = null
+                            )
+                            callback(errorResult)
+                        }
+                    )
+                    // 清理临时文件
+                    imageFile.delete()
+                } else {
+                    // 创建一个错误的结果对象
+                    val errorResult = DetectionResultData(
+                        id = "error",
+                        detectionType = "lsb",
+                        originalImageId = null,
+                        detectedImageId = null,
+                        isTampered = false,
+                        tamperRatio = null,
+                        tamperRatioPercent = 0.0f,
+                        confidence = null,
+                        tamperedRegions = null,
+                        visualizationUrl = null,
+                        createdAt = null
+                    )
+                    callback(errorResult)
+                }
+            } else {
+                // 创建一个错误的结果对象
+                val errorResult = DetectionResultData(
+                    id = "error",
+                    detectionType = "lsb",
+                    originalImageId = null,
+                    detectedImageId = null,
+                    isTampered = false,
+                    tamperRatio = null,
+                    tamperRatioPercent = 0.0f,
+                    confidence = null,
+                    tamperedRegions = null,
+                    visualizationUrl = null,
+                    createdAt = null
+                )
+                callback(errorResult)
+            }
+        }
+    }
+    
+    /**
+     * 模型检测（从URI）
+     */
+    fun detectWithModel(uri: android.net.Uri, confidenceThreshold: Float = Constants.MODEL_DETECTION_THRESHOLD, callback: (DetectionResultData) -> Unit) {
+        viewModelScope.launch {
+            if (context != null) {
+                val imageFile = createTempFileFromUri(context, uri, "temp_image_", ".jpg")
+                if (imageFile != null) {
+                    detectionRepository.detectModel(imageFile, confidenceThreshold).fold(
+                        onSuccess = { result ->
+                            callback(result)
+                        },
+                        onFailure = { exception ->
+                            // 创建一个错误的结果对象
+                            val errorResult = DetectionResultData(
+                                id = "error",
+                                detectionType = "model",
+                                originalImageId = null,
+                                detectedImageId = null,
+                                isTampered = false,
+                                tamperRatio = null,
+                                tamperRatioPercent = 0.0f,
+                                confidence = null,
+                                tamperedRegions = null,
+                                visualizationUrl = null,
+                                createdAt = null
+                            )
+                            callback(errorResult)
+                        }
+                    )
+                    // 清理临时文件
+                    imageFile.delete()
+                } else {
+                    // 创建一个错误的结果对象
+                    val errorResult = DetectionResultData(
+                        id = "error",
+                        detectionType = "model",
+                        originalImageId = null,
+                        detectedImageId = null,
+                        isTampered = false,
+                        tamperRatio = null,
+                        tamperRatioPercent = 0.0f,
+                        confidence = null,
+                        tamperedRegions = null,
+                        visualizationUrl = null,
+                        createdAt = null
+                    )
+                    callback(errorResult)
+                }
+            } else {
+                // 创建一个错误的结果对象
+                val errorResult = DetectionResultData(
+                    id = "error",
+                    detectionType = "model",
+                    originalImageId = null,
+                    detectedImageId = null,
+                    isTampered = false,
+                    tamperRatio = null,
+                    tamperRatioPercent = 0.0f,
+                    confidence = null,
+                    tamperedRegions = null,
+                    visualizationUrl = null,
+                    createdAt = null
+                )
+                callback(errorResult)
+            }
+        }
+    }
+    
+    /**
+     * 从URI创建临时文件
+     */
+    private fun createTempFileFromUri(context: android.content.Context, uri: android.net.Uri, prefix: String, suffix: String): File? {
+        try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            if (inputStream != null) {
+                val tempFile = File.createTempFile(prefix, suffix)
+                val outputStream = tempFile.outputStream()
+                inputStream.copyTo(outputStream)
+                inputStream.close()
+                outputStream.close()
+                return tempFile
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
+    
+    /**
      * 获取可视化图片
      */
     fun loadVisualization(detectionResultId: String) {
@@ -144,16 +306,7 @@ class DetectionViewModel(
         }
     }
     
-    /**
-     * 清除所有状态
-     */
-    fun clearAllState() {
-        _lsbDetectionState.value = DetectionState.Idle
-        _compareDetectionState.value = DetectionState.Idle
-        _modelDetectionState.value = DetectionState.Idle
-        _visualizationState.value = VisualizationState.Idle
-        _imageListForSelection.value = emptyList()
-    }
+
 
     fun clearLsbState() {
         _lsbDetectionState.value = DetectionState.Idle
@@ -173,6 +326,42 @@ class DetectionViewModel(
 
     fun clearImageListForSelection() {
         _imageListForSelection.value = emptyList()
+    }
+    
+    /**
+     * 加载检测历史
+     */
+    fun loadDetectionHistory(page: Int = 1, pageSize: Int = 10, detectionType: String? = null) {
+        viewModelScope.launch {
+            _detectionHistoryState.value = DetectionHistoryState.Loading
+            detectionRepository.getDetectionHistory(page, pageSize, detectionType).fold(
+                onSuccess = { results ->
+                    _detectionHistoryState.value = DetectionHistoryState.Success(results)
+                },
+                onFailure = { exception ->
+                    _detectionHistoryState.value = DetectionHistoryState.Error(exception.message ?: "加载失败")
+                }
+            )
+        }
+    }
+    
+    /**
+     * 清除检测历史状态
+     */
+    fun clearDetectionHistoryState() {
+        _detectionHistoryState.value = DetectionHistoryState.Idle
+    }
+    
+    /**
+     * 清除所有状态
+     */
+    fun clearAllState() {
+        _lsbDetectionState.value = DetectionState.Idle
+        _compareDetectionState.value = DetectionState.Idle
+        _modelDetectionState.value = DetectionState.Idle
+        _visualizationState.value = VisualizationState.Idle
+        _imageListForSelection.value = emptyList()
+        _detectionHistoryState.value = DetectionHistoryState.Idle
     }
 }
 
@@ -194,5 +383,15 @@ sealed class VisualizationState {
     object Loading : VisualizationState()
     data class Success(val bitmap: android.graphics.Bitmap) : VisualizationState()
     data class Error(val message: String) : VisualizationState()
+}
+
+/**
+ * 检测历史状态
+ */
+sealed class DetectionHistoryState {
+    object Idle : DetectionHistoryState()
+    object Loading : DetectionHistoryState()
+    data class Success(val results: List<DetectionResultData>) : DetectionHistoryState()
+    data class Error(val message: String) : DetectionHistoryState()
 }
 

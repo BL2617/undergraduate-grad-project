@@ -1,5 +1,6 @@
 package com.bl2617.tamperrecovery.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -8,10 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bl2617.tamperrecovery.ui.components.*
+import com.bl2617.tamperrecovery.ui.theme.*
 import com.bl2617.tamperrecovery.viewmodel.AuthState
 import com.bl2617.tamperrecovery.viewmodel.AuthViewModel
 
@@ -41,95 +45,134 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Background)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = if (isLoginMode) "登录" else "注册",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-        
-        // 用户名输入框
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("用户名") },
+        // 应用标题
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            singleLine = true
-        )
-        
-        // 邮箱输入框（仅注册时显示）
-        if (!isLoginMode) {
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("邮箱") },
+                .padding(bottom = 48.dp)
+        ) {
+            Text(
+                text = "图像篡改检测",
+                style = MaterialTheme.typography.displayMedium,
+                color = OnSurface,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                singleLine = true
+//                    .background(
+//                        brush = Brush.linearGradient(listOf(GradientStart, GradientEnd)),
+//                        alpha = 0.1f
+//                    )
+                    .padding(16.dp)
             )
         }
         
-        // 密码输入框
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("密码") },
+        // 登录/注册卡片
+        TechCard(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            singleLine = true,
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(
-                        imageVector = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
-                        contentDescription = if (passwordVisible) "隐藏密码" else "显示密码"
+                .width(620.dp)
+                .padding(bottom = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // 标题
+                TechTitle(
+                    text = if (isLoginMode) "登录" else "注册",
+                    modifier = Modifier
+                        .padding(bottom = 24.dp)
+                )
+                
+                // 用户名输入框
+                TechTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = "用户名",
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                )
+                
+                // 邮箱输入框（仅注册时显示）
+                if (!isLoginMode) {
+                    TechTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = "邮箱",
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
                     )
                 }
-            }
-        )
-        
-        // 错误消息
-        if (authState is AuthState.Error) {
-            Text(
-                text = (authState as AuthState.Error).message,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp)
-            )
-        }
-        
-        // 登录/注册按钮
-        Button(
-            onClick = {
-                if (isLoginMode) {
-                    viewModel.login(username, password)
-                } else {
-                    viewModel.register(username, email, password)
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            enabled = authState !is AuthState.Loading && 
-                     username.isNotBlank() && 
-                     password.isNotBlank() &&
-                     (isLoginMode || email.isNotBlank())
-        ) {
-            if (authState is AuthState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
+                
+                // 密码输入框
+                TechTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = "密码",
+                    isPassword = !passwordVisible,
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
                 )
-            } else {
-                Text(if (isLoginMode) "登录" else "注册")
+                
+                // 显示/隐藏密码按钮
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = { passwordVisible = !passwordVisible }
+                    ) {
+                        Text(
+                            text = if (passwordVisible) "隐藏密码" else "显示密码",
+                            color = Primary
+                        )
+                    }
+                }
+                
+                // 错误消息
+                if (authState is AuthState.Error) {
+                    Text(
+                        text = (authState as AuthState.Error).message,
+                        color = Error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                    )
+                }
+                
+                // 登录/注册按钮
+                TechButton(
+                    text = if (isLoginMode) "登录" else "注册",
+                    onClick = {
+                        if (isLoginMode) {
+                            viewModel.login(username, password)
+                        } else {
+                            viewModel.register(username, email, password)
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(bottom = 16.dp),
+                    enabled = authState !is AuthState.Loading && 
+                             username.isNotBlank() && 
+                             password.isNotBlank() &&
+                             (isLoginMode || email.isNotBlank())
+                )
+                
+                // 加载指示器
+                if (authState is AuthState.Loading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Primary
+                        )
+                    }
+                }
             }
         }
         
@@ -144,7 +187,8 @@ fun LoginScreen(
             }
         ) {
             Text(
-                text = if (isLoginMode) "还没有账号？注册" else "已有账号？登录"
+                text = if (isLoginMode) "还没有账号？注册" else "已有账号？登录",
+                color = Primary
             )
         }
     }

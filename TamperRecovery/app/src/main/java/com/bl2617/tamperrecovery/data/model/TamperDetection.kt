@@ -201,3 +201,34 @@ data class RestoreBlockData(
     @SerializedName("block_data")
     val blockData: String // base64编码的PNG数据
 )
+
+/**
+ * 检测历史响应
+ */
+data class DetectionHistoryResponse(
+    @SerializedName("code")
+    val code: Int,
+    
+    @SerializedName("message")
+    val message: String,
+    
+    @SerializedName("data")
+    val data: DetectionHistoryData
+)
+
+/**
+ * 检测历史数据
+ */
+data class DetectionHistoryData(
+    @SerializedName("results")
+    val results: List<DetectionResultData>,
+    
+    @SerializedName("total")
+    val total: Int,
+    
+    @SerializedName("page")
+    val page: Int,
+    
+    @SerializedName("page_size")
+    val pageSize: Int
+)

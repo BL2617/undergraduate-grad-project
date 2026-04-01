@@ -63,7 +63,8 @@ dependencies {
     // Image Loading
     implementation(libs.coil.compose)
     implementation(libs.coil.okhttp)
-    
+    implementation(libs.androidx.compose.foundation)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -25,24 +25,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,6 +44,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.bl2617.tamperrecovery.data.model.ImageData
+import com.bl2617.tamperrecovery.ui.components.*
+import com.bl2617.tamperrecovery.ui.theme.*
 import com.bl2617.tamperrecovery.utils.AuthManager
 import com.bl2617.tamperrecovery.viewmodel.ImageListState
 import com.bl2617.tamperrecovery.viewmodel.ImageViewModel
@@ -132,97 +117,31 @@ fun ImageListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("图片列表") },
+                title = {
+                    Text(
+                        text = "图像管理",
+                        color = OnSurface
+                    )
+                },
                 actions = {
-                    // 分类筛选按钮
-                    TextButton(onClick = {
-                        selectedCategory = if (selectedCategory == null) "测试" else null
-                        viewModel.filterByCategory(selectedCategory)
-                    }) {
-                        Text(if (selectedCategory != null) "取消筛选" else "筛选")
-                    }
                     // 刷新按钮
-                    IconButton(onClick = { viewModel.refreshImageList() }) {
+                    IconButton(
+                        onClick = { viewModel.refreshImageList() },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = Primary
+                        )
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
                             contentDescription = "刷新"
                         )
                     }
-                    // 用户菜单按钮
-                    Box {
-                        IconButton(onClick = { showUserMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.AccountCircle,
-                                contentDescription = "用户菜单"
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showUserMenu,
-                            onDismissRequest = { showUserMenu = false }
-                        ) {
-                            // 显示当前用户名
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(
-                                            text = currentUsername,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = "已登录",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                        )
-                                    }
-                                },
-                                onClick = { showUserMenu = false },
-                                enabled = false
-                            )
-                            Divider()
-                            // 切换账号
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.SwapHoriz,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Text("切换账号")
-                                    }
-                                },
-                                onClick = {
-                                    showUserMenu = false
-                                    onLogout()
-                                }
-                            )
-                            // 退出登录
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.ExitToApp,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Text("退出登录")
-                                    }
-                                },
-                                onClick = {
-                                    showUserMenu = false
-                                    onLogout()
-                                }
-                            )
-                        }
-                    }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Surface,
+                    titleContentColor = OnSurface,
+                    actionIconContentColor = OnSurface
+                )
             )
         },
         floatingActionButton = {
@@ -230,12 +149,14 @@ fun ImageListScreen(
                 onClick = {
                     imagePickerLauncher.launch("image/*")
                 },
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                containerColor = Primary,
+                contentColor = OnPrimary
             ) {
                 if (uploadState is UploadState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = OnPrimary
                     )
                 } else {
                     Icon(
@@ -245,18 +166,30 @@ fun ImageListScreen(
                 }
             }
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { 
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = {
+                    Snackbar(
+                        modifier = Modifier
+                            .background(Surface)
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = it.visuals.message,
+                            color = OnSurface
+                        )
+                    }
+                }
+            ) 
+        },
+        containerColor = Background
     ) { paddingValues ->
         Column(modifier = modifier.fillMaxSize().padding(paddingValues)) {
             // 内容区域
             when (val state = imageListState) {
                 is ImageListState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    TechLoadingIndicator()
                 }
 
                 is ImageListState.Success -> {
@@ -265,7 +198,18 @@ fun ImageListScreen(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("暂无图片")
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                TechSubtitle(
+                                    text = "暂无图片",
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+                                TechSubtitle(
+                                    text = "点击右下角的 + 按钮上传图片"
+                                )
+                            }
                         }
                     } else {
                         val gridState = rememberLazyGridState()
@@ -306,7 +250,10 @@ fun ImageListScreen(
                                             .padding(16.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = Primary
+                                        )
                                     }
                                 }
                             }
@@ -326,23 +273,19 @@ fun ImageListScreen(
                             Text(
                                 text = state.message,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.error
+                                color = Error
                             )
-                            Button(onClick = { viewModel.refreshImageList() }) {
-                                Text("重试")
-                            }
+                            TechButton(
+                                text = "重试",
+                                onClick = { viewModel.refreshImageList() }
+                            )
                         }
                     }
                 }
 
                 is ImageListState.LoadingMore -> {
                     // 加载更多时显示加载指示器
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    TechLoadingIndicator()
                 }
             }
         }
@@ -358,13 +301,11 @@ fun ImageItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    TechCard(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clickable(onClick = onClick)
     ) {
         Box {
             // 图片
@@ -383,7 +324,7 @@ fun ImageItem(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                    .background(Surface.copy(alpha = 0.8f))
                     .padding(8.dp)
             ) {
                 // 图片尺寸
@@ -392,7 +333,8 @@ fun ImageItem(
                         text = "${image.width} × ${image.height}",
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        color = OnSurface
                     )
                 }
 
@@ -401,7 +343,7 @@ fun ImageItem(
                     Text(
                         text = formatFileSize(image.size),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        color = OnSurfaceVariant
                     )
                 }
             }

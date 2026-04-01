@@ -1,27 +1,12 @@
 package com.bl2617.tamperrecovery.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,16 +18,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bl2617.tamperrecovery.data.model.DetectionResultData
+import com.bl2617.tamperrecovery.ui.components.*
+import com.bl2617.tamperrecovery.ui.theme.*
 import com.bl2617.tamperrecovery.viewmodel.DetectionViewModel
 import com.bl2617.tamperrecovery.viewmodel.VisualizationState
+import coil.compose.AsyncImage
+import android.net.Uri
+import androidx.compose.foundation.background
 
 /**
  * 检测结果展示界面
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetectionResultScreen(
     result: DetectionResultData,
+    originalImageUri: Uri?,
     viewModel: DetectionViewModel,
     onBack: () -> Unit
 ) {
@@ -55,171 +45,167 @@ fun DetectionResultScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("检测结果") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Background)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // 返回按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start
+        ) {
+            TechButton(
+                text = "返回",
+                onClick = onBack,
+                modifier = Modifier.width(100.dp)
             )
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+
+        // 原图片和检测结果区域
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
         ) {
-            // 检测结果摘要卡片
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (result.isTampered) {
-                        MaterialTheme.colorScheme.errorContainer
-                    } else {
-                        MaterialTheme.colorScheme.primaryContainer
-                    }
-                )
+            // 原图片
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                TechCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
                 ) {
-                    Text(
-                        text = if (result.isTampered) "检测到篡改" else "未检测到篡改",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (result.isTampered) {
-                            MaterialTheme.colorScheme.onErrorContainer
-                        } else {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        }
-                    )
-
-                    if (result.tamperRatioPercent != null) {
-                        Text(
-                            text = "篡改比例: ${String.format("%.2f", result.tamperRatioPercent)}%",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-
-                    if (result.confidence != null) {
-                        Text(
-                            text = "置信度: ${result.confidence}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-
-            // 可视化图片
-            if (result.visualizationUrl != null) {
-                Text(
-                    text = "可视化结果",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                when (val state = visualizationState) {
-                    is VisualizationState.Loading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
-
-                    is VisualizationState.Success -> {
-                        Image(
-                            bitmap = state.bitmap.asImageBitmap(),
-                            contentDescription = "可视化结果",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(300.dp),
-                            contentScale = ContentScale.Fit
-                        )
-                    }
-
-                    is VisualizationState.Error -> {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
-                        ) {
-                            Text(
-                                text = "加载可视化图片失败: ${state.message}",
-                                modifier = Modifier.padding(16.dp),
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
-
-                    else -> {}
-                }
-            }
-
-            // 篡改区域列表
-            if (result.tamperedRegions != null && result.tamperedRegions.isNotEmpty()) {
-                Text(
-                    text = "篡改区域",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                result.tamperedRegions.forEachIndexed { index, region ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = "区域 ${index + 1}",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                        if (originalImageUri != null) {
+                            AsyncImage(
+                                model = originalImageUri,
+                                contentDescription = "Original image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
-                            Text("位置: (${region.x}, ${region.y})")
-                            Text("尺寸: ${region.width} × ${region.height}")
-                            if (region.confidence != null) {
-                                Text("置信度: ${String.format("%.2f", region.confidence)}")
-                            }
+                        } else {
+                            Text(
+                                text = "原图片",
+                                color = OnSurfaceVariant
+                            )
                         }
+                    }
+                }
+
+                // 文件信息
+                TechCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "文件名: ${result.originalImageId ?: "未知"}",
+                            color = OnSurface
+                        )
+                        Text(
+                            text = "文件类型: 图片",
+                            color = OnSurfaceVariant
+                        )
+                        Text(
+                            text = "文件大小: 未知",
+                            color = OnSurfaceVariant
+                        )
                     }
                 }
             }
 
-            // 检测信息
-            Card(
-                modifier = Modifier.fillMaxWidth()
+            // 检测结果
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // 水印检测结果
+                TechCard(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "检测信息",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text("检测类型: ${result.detectionType}")
-                    Text("检测结果ID: ${result.id}")
-                    if (result.originalImageId != null) {
-                        Text("原图ID: ${result.originalImageId}")
-                    }
-                    if (result.createdAt != null) {
-                        Text("检测时间: ${result.createdAt}")
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "水印检测结果:",
+                            color = OnSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (result.isTampered) "有篡改" else "未篡改",
+                            color = if (result.isTampered) Error else Success
+                        )
+                        if (result.tamperRatioPercent != null) {
+                            Text(
+                                text = "篡改比例: ${String.format("%.2f", result.tamperRatioPercent)}%",
+                                color = OnSurfaceVariant
+                            )
+                        }
                     }
                 }
+
+                // 点击查看详细
+                TechButton(
+                    text = "点击查看详细",
+                    onClick = {
+                        // 查看水印检测详细结果
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // 模型检测结果
+                TechCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "模型检测结果:",
+                            color = OnSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = if (result.isTampered) "有篡改" else "未篡改",
+                            color = if (result.isTampered) Error else Success
+                        )
+                        if (result.confidence != null) {
+                            Text(
+                                text = "置信度: ${result.confidence}",
+                                color = OnSurfaceVariant
+                            )
+                        }
+                        if (result.tamperRatioPercent != null) {
+                            Text(
+                                text = "篡改比例: ${String.format("%.2f", result.tamperRatioPercent)}%",
+                                color = OnSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // 点击查看详细
+                TechButton(
+                    text = "点击查看详细",
+                    onClick = {
+                        // 查看模型检测详细结果
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

@@ -6,18 +6,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -28,14 +25,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bl2617.tamperrecovery.data.model.DetectionResultData
 import com.bl2617.tamperrecovery.data.model.ImageData
 import com.bl2617.tamperrecovery.network.NetworkModule
 import com.bl2617.tamperrecovery.screens.*
-import com.bl2617.tamperrecovery.ui.theme.TamperRecoveryTheme
+import com.bl2617.tamperrecovery.ui.theme.*
 import com.bl2617.tamperrecovery.utils.AuthManager
-import com.bl2617.tamperrecovery.utils.LogUtil
 import com.bl2617.tamperrecovery.viewmodel.AuthViewModel
 import com.bl2617.tamperrecovery.viewmodel.DetectionViewModel
 import com.bl2617.tamperrecovery.viewmodel.ImageViewModel
@@ -95,17 +90,17 @@ fun TamperRecoveryApp() {
     }
 
     // 导航状态
-    var selectedTab by remember { mutableIntStateOf(0) } // 0: 图片管理, 1: 检测功能, 2: 个人中心
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: 检测中心, 1: 检测历史, 2: 个人中心
     var selectedImageId by remember { mutableStateOf<String?>(null) }
-    var detectionScreen by remember { mutableStateOf(DetectionScreen.Main) }
     var detectionResult by remember { mutableStateOf<DetectionResultData?>(null) }
+    var selectedImageUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
     // 当退出登录时，清除所有状态
     LaunchedEffect(isLoggedIn) {
         if (!isLoggedIn) {
             selectedImageId = null
-            detectionScreen = DetectionScreen.Main
             detectionResult = null
+            selectedImageUri = null
             selectedTab = 0
         }
     }
@@ -133,69 +128,48 @@ fun TamperRecoveryApp() {
                 imageViewModel?.let { imgViewModel ->
                     detectionViewModel?.let { detViewModel ->
                         when {
-                            selectedTab == 0 -> {
-                                // 图片管理模块
-                                ImageListScreen(
-                                    viewModel = imgViewModel,
-                                    onImageClick = { image: ImageData ->
-                                        selectedImageId = image.id
+                            selectedTab == 1 -> {
+                                DetectionHistoryScreen(
+                                    viewModel = detViewModel,
+                                    onBack = {
+                                        // 不需要返回，因为这是标签页
                                     },
-                                    onLogout = {
-                                        imgViewModel.clearAllState()
-                                        detViewModel.clearAllState()
-                                        authViewModel.logout()
-                                        isLoggedIn = false
+                                    onViewResult = { result ->
+                                        detectionResult = result
+                                        selectedTab = 0 // 切换到检测中心标签页显示结果
                                     }
                                 )
                             }
 
-                            selectedTab == 1 -> {
+                            selectedTab == 0 -> {
                                 // 篡改检测
                                 if (detectionResult != null) {
                                     DetectionResultScreen(
                                         result = detectionResult!!,
-                                        viewModel = detViewModel
-                                    ) {
-                                        detectionResult = null
-                                        detectionScreen = DetectionScreen.Main
-                                    }
-                                }
-                                else
-                                when(detectionScreen) {
-                                    DetectionScreen.Main -> {
-                                        DetectionMainScreen(
-                                            onLSBClick = { detectionScreen = DetectionScreen.LSB },
-                                            onModelClick = {
-                                                detectionScreen = DetectionScreen.Model
-                                            }
-                                        )
-                                    }
-                                    DetectionScreen.LSB -> {
-                                        LSBDetectionScreen(
-                                            viewModel = detViewModel,
-                                            onBack = {
-                                                detectionScreen = DetectionScreen.Main
-                                                selectedTab = 1
-                                            },
-                                        ) { result ->
-                                            detectionResult = result
-                                            detectionScreen = DetectionScreen.Main
+                                        originalImageUri = selectedImageUri,
+                                        viewModel = detViewModel,
+                                        onBack = {
+                                            detectionResult = null
+                                            selectedImageUri = null
                                         }
-                                    }
-                                    DetectionScreen.Model -> {
-                                        ModelDetectionScreen(
-                                            viewModel = detViewModel,
-                                            onBack = {
-                                                detectionScreen = DetectionScreen.Main
+                                    )
+                                } else {
+                                    DetectionScreen(
+//                                        viewModel = detViewModel,
+                                        onStartDetection = { uri ->
+                                            selectedImageUri = uri
+                                            // 同时执行水印检测和模型检测
+                                            detViewModel.detectLSBWatermark(uri) { lsbResult ->
+                                                // 处理LSB检测结果
+                                                detectionResult = lsbResult
                                             }
-                                        ) { result ->
-                                            detectionResult = result
-                                            detectionScreen = DetectionScreen.Main
+                                            detViewModel.detectWithModel(uri) { modelResult ->
+                                                // 处理模型检测结果
+                                                detectionResult = modelResult
+                                            }
                                         }
-                                    }
+                                    )
                                 }
-
-
                             }
 
                             selectedTab == 2 -> {
@@ -211,15 +185,6 @@ fun TamperRecoveryApp() {
                                 )
                             }
 
-                            else -> {
-                                // 当 selectedTab == 1 但 detectionScreen == null 时，自动设置 detectionScreen = Main
-                                // 这确保用户点击"检测功能"时能正确显示检测主界面
-                                LaunchedEffect(selectedTab) {
-                                    if (selectedTab == 1 && detectionScreen == null) {
-                                        detectionScreen = DetectionScreen.Main
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -238,25 +203,27 @@ fun TamperRecoveryApp() {
                         .fillMaxWidth()
                         .padding(vertical = 20.dp)
                 ) {
-                    // 图片管理
+
                     Spacer(modifier = Modifier.weight(1f))
                     NavigateBarItem(
-                        imageVector = Icons.Default.Image,
+                        imageVector = Icons.Default.Security,
+                        text = "检测中心",
+                        isSelected = selectedTab == 0,
                         onClick = {
                             selectedTab = 0
                         },
-                        text = "图片管理",
                         modifier = Modifier
                             .wrapContentSize()
                             .padding(30.dp)
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     NavigateBarItem(
-                        imageVector = Icons.Default.Security,
+                        imageVector = Icons.Default.Image,
+                        text = "检测历史",
+                        isSelected = selectedTab == 1,
                         onClick = {
                             selectedTab = 1
                         },
-                        text = "检测功能",
                         modifier = Modifier
                             .wrapContentSize()
                             .padding(30.dp)
@@ -264,10 +231,11 @@ fun TamperRecoveryApp() {
                     Spacer(modifier = Modifier.weight(1f))
                     NavigateBarItem(
                         imageVector = Icons.Default.Person,
+                        text = "个人中心",
+                        isSelected = selectedTab == 2,
                         onClick = {
                             selectedTab = 2
                         },
-                        text = "个人中心",
                         modifier = Modifier
                             .wrapContentSize()
                             .padding(30.dp)
@@ -283,32 +251,27 @@ fun TamperRecoveryApp() {
 fun NavigateBarItem(
     imageVector: ImageVector,
     text: String,
+    isSelected: Boolean = false,
     modifier: Modifier = Modifier,
     spacerWidth: Dp = 20.dp,
     onClick: () -> Unit = {  }
 ) {
      Row (
         modifier = modifier
-
             .clickable(
             enabled = true,
             onClick = onClick
         )
     ) {
-        Image(
+        Icon(
             imageVector = imageVector,
-            contentDescription = text
+            contentDescription = text,
+            tint = if (isSelected) Primary else OnSurfaceVariant,
         )
         Spacer(modifier = Modifier.width(spacerWidth))
-        Text(text = text)
+        Text(
+            text = text,
+            color = if (isSelected) Primary else OnSurfaceVariant
+        )
     }
-}
-
-/**
- * 检测功能子界面枚举
- */
-enum class DetectionScreen {
-    Main,
-    LSB,
-    Model
 }

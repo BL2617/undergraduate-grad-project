@@ -136,6 +136,20 @@ interface ApiService {
     suspend fun getVisualization(
         @Path("detectionResultId") detectionResultId: String
     ): Response<ResponseBody>
+    
+    /**
+     * 获取检测历史
+     * @param page 页码（默认1）
+     * @param pageSize 每页数量（默认10）
+     * @param detectionType 检测类型（可选）
+     * @return 检测历史响应数据
+     */
+    @GET("api/detection/history")
+    suspend fun getDetectionHistory(
+        @Query("page") page: Int = 1,
+        @Query("page_size") pageSize: Int = 10,
+        @Query("detection_type") detectionType: String? = null
+    ): Response<com.bl2617.tamperrecovery.data.model.DetectionHistoryResponse>
 
 }
 

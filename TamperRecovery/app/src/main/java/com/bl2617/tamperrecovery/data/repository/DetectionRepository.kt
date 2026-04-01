@@ -171,6 +171,36 @@ class DetectionRepository(
         }
     }
     
+    /**
+     * 获取检测历史
+     */
+    suspend fun getDetectionHistory(
+        page: Int = 1,
+        pageSize: Int = 10,
+        detectionType: String? = null
+    ): Result<List<DetectionResultData>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getDetectionHistory(page, pageSize, detectionType)
+                if (response.isSuccessful && response.body() != null) {
+                    val historyResponse = response.body()!!
+                    if (historyResponse.code == 200) {
+                        Result.success(historyResponse.data.results)
+                    } else {
+                        Result.failure(
+                            Exception("获取检测历史失败: ${historyResponse.message}")
+                        )
+                    }
+                } else {
+                    Result.failure(
+                        Exception("网络请求失败: ${response.code()} ${response.message()}")
+                    )
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+    }
 
 }
 
