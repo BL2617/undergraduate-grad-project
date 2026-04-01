@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bl2617.tamperrecovery.data.model.DetectionResultData
 import com.bl2617.tamperrecovery.data.model.ImageData
 import com.bl2617.tamperrecovery.network.NetworkModule
@@ -96,14 +97,14 @@ fun TamperRecoveryApp() {
     // 导航状态
     var selectedTab by remember { mutableIntStateOf(0) } // 0: 图片管理, 1: 检测功能, 2: 个人中心
     var selectedImageId by remember { mutableStateOf<String?>(null) }
-    var detectionScreen by remember { mutableStateOf<DetectionScreen?>(null) }
+    var detectionScreen by remember { mutableStateOf(DetectionScreen.Main) }
     var detectionResult by remember { mutableStateOf<DetectionResultData?>(null) }
 
     // 当退出登录时，清除所有状态
     LaunchedEffect(isLoggedIn) {
         if (!isLoggedIn) {
             selectedImageId = null
-            detectionScreen = null
+            detectionScreen = DetectionScreen.Main
             detectionResult = null
             selectedTab = 0
         }
@@ -119,164 +120,159 @@ fun TamperRecoveryApp() {
             }
         )
     } else {
-        // 显示主界面
-        imageViewModel?.let { imgViewModel ->
-            detectionViewModel?.let { detViewModel ->
-                // 如果有检测结果，显示结果界面（优先显示）
-                // 检测功能子界面
-                when (detectionScreen) {
-                    DetectionScreen.Main -> {
-                        DetectionMainScreen(
-                            onLSBClick = { detectionScreen = DetectionScreen.LSB },
-                            onModelClick = { detectionScreen = DetectionScreen.Model },
-                            onBack = {
-                                detectionScreen = null
-                                selectedTab = 0  // 返回时切换到图片管理
+
+        // 主界面：使用上下布局，顶部显示内容，底部显示导航栏
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // 顶部内容区域
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
+                imageViewModel?.let { imgViewModel ->
+                    detectionViewModel?.let { detViewModel ->
+                        when {
+                            selectedTab == 0 -> {
+                                // 图片管理模块
+                                ImageListScreen(
+                                    viewModel = imgViewModel,
+                                    onImageClick = { image: ImageData ->
+                                        selectedImageId = image.id
+                                    },
+                                    onLogout = {
+                                        imgViewModel.clearAllState()
+                                        detViewModel.clearAllState()
+                                        authViewModel.logout()
+                                        isLoggedIn = false
+                                    }
+                                )
                             }
-                        )
-                    }
 
-                    DetectionScreen.LSB -> {
-                        LSBDetectionScreen(
-                            viewModel = detViewModel,
-                            onBack = { detectionScreen = DetectionScreen.Main },
-                            onResult = { result ->
-                                detectionResult = result
-                                detectionScreen = null
-                            }
-                        )
-                    }
-
-                    DetectionScreen.Model -> {
-                        ModelDetectionScreen(
-                            viewModel = detViewModel,
-                            onBack = { detectionScreen = DetectionScreen.Main },
-                            onResult = { result ->
-                                detectionResult = result
-                                detectionScreen = null
-                            }
-                        )
-                    }
-
-                    null -> {
-                            // 主界面：使用上下布局，顶部显示内容，底部显示导航栏
-                            Column(
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                // 顶部内容区域
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                ) {
-                                    when {
-                                        selectedImageId != null -> {
-                                            ImageDetailScreen(
-                                                imageId = selectedImageId!!,
-                                                viewModel = imgViewModel,
-                                                onBack = { selectedImageId = null },
-                                                onLogout = {
-                                                    imgViewModel.clearAllState()
-                                                    detViewModel.clearAllState()
-                                                    authViewModel.logout()
-                                                    isLoggedIn = false
-                                                }
-                                            )
-                                        }
-
-                                        selectedTab == 0 -> {
-                                            // 图片管理模块
-                                            ImageListScreen(
-                                                viewModel = imgViewModel,
-                                                onImageClick = { image: ImageData ->
-                                                    selectedImageId = image.id
-                                                },
-                                                onLogout = {
-                                                    imgViewModel.clearAllState()
-                                                    detViewModel.clearAllState()
-                                                    authViewModel.logout()
-                                                    isLoggedIn = false
-                                                }
-                                            )
-                                        }
-
-                                        selectedTab == 2 -> {
-                                            // 个人中心
-                                            ProfileScreen(
-                                                authViewModel = authViewModel,
-                                                onLogout = {
-                                                    imgViewModel.clearAllState()
-                                                    detViewModel.clearAllState()
-                                                    authViewModel.logout()
-                                                    isLoggedIn = false
-                                                }
-                                            )
-                                        }
-
-                                        else -> {
-                                            // 当 selectedTab == 1 但 detectionScreen == null 时，自动设置 detectionScreen = Main
-                                            // 这确保用户点击"检测功能"时能正确显示检测主界面
-                                            LaunchedEffect(selectedTab) {
-                                                if (selectedTab == 1 && detectionScreen == null) {
-                                                    detectionScreen = DetectionScreen.Main
-                                                }
+                            selectedTab == 1 -> {
+                                // 篡改检测
+                                if (detectionResult != null) {
+                                    DetectionResultScreen(
+                                        result = detectionResult!!,
+                                        viewModel = detViewModel
+                                    ) {
+                                        detectionResult = null
+                                        detectionScreen = DetectionScreen.Main
+                                    }
+                                }
+                                else
+                                when(detectionScreen) {
+                                    DetectionScreen.Main -> {
+                                        DetectionMainScreen(
+                                            onLSBClick = { detectionScreen = DetectionScreen.LSB },
+                                            onModelClick = {
+                                                detectionScreen = DetectionScreen.Model
                                             }
+                                        )
+                                    }
+                                    DetectionScreen.LSB -> {
+                                        LSBDetectionScreen(
+                                            viewModel = detViewModel,
+                                            onBack = {
+                                                detectionScreen = DetectionScreen.Main
+                                                selectedTab = 1
+                                            },
+                                        ) { result ->
+                                            detectionResult = result
+                                            detectionScreen = DetectionScreen.Main
+                                        }
+                                    }
+                                    DetectionScreen.Model -> {
+                                        ModelDetectionScreen(
+                                            viewModel = detViewModel,
+                                            onBack = {
+                                                detectionScreen = DetectionScreen.Main
+                                            }
+                                        ) { result ->
+                                            detectionResult = result
+                                            detectionScreen = DetectionScreen.Main
                                         }
                                     }
                                 }
 
-                                // 底部导航栏
-                                val scrollState = rememberScrollState()
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-//                                        .horizontalScroll(scrollState)
-                                ) {
-                                     Row(
-                                         modifier = Modifier.fillMaxWidth()
-                                             .padding(vertical = 20.dp)
-                                     ) {
-                                        // 图片管理
-                                         Spacer(modifier = Modifier.weight(1f))
-                                         NavigateBarItem(
-                                             imageVector = Icons.Default.Image,
-                                             onClick = {
-                                                 selectedTab = 0
-                                                 LogUtil.d(msg = "图片管理")
-                                                 detectionScreen = null  // 确保清除检测屏幕状态
-                                             },
-                                            text = "图片管理",
-                                             modifier = Modifier.wrapContentSize()
-                                                 .padding(30.dp)
-                                         )
-                                         Spacer(modifier = Modifier.weight(1f))
-                                         NavigateBarItem(
-                                             imageVector = Icons.Default.Security,
-                                             onClick = {
-                                                 selectedTab = 1
-                                                 LogUtil.d(msg = "检测功能")
-                                                 detectionScreen = null  // 确保清除检测屏幕状态
-                                             },
-                                             text = "检测功能",
-                                                     modifier = Modifier.wrapContentSize()
-                                                 .padding(30.dp)
-                                         )
-                                         Spacer(modifier = Modifier.weight(1f))
-                                         NavigateBarItem(
-                                             imageVector = Icons.Default.Person,
-                                             onClick = {
-                                                 selectedTab = 2
-                                                 LogUtil.d(msg = "个人中心")
-                                                 detectionScreen = null  // 确保清除检测屏幕状态
-                                             },
-                                             text = "个人中心",
-                                             modifier = Modifier.wrapContentSize()
-                                                 .padding(30.dp)
-                                         )
-                                         Spacer(modifier = Modifier.weight(1f))
+
+                            }
+
+                            selectedTab == 2 -> {
+                                // 个人中心
+                                ProfileScreen(
+                                    authViewModel = authViewModel,
+                                    onLogout = {
+                                        imageViewModel?.clearAllState()
+                                        detectionViewModel?.clearAllState()
+                                        authViewModel.logout()
+                                        isLoggedIn = false
+                                    }
+                                )
+                            }
+
+                            else -> {
+                                // 当 selectedTab == 1 但 detectionScreen == null 时，自动设置 detectionScreen = Main
+                                // 这确保用户点击"检测功能"时能正确显示检测主界面
+                                LaunchedEffect(selectedTab) {
+                                    if (selectedTab == 1 && detectionScreen == null) {
+                                        detectionScreen = DetectionScreen.Main
                                     }
                                 }
                             }
                         }
+                    }
+
+                }
+            }
+
+            // 底部导航栏
+            val scrollState = rememberScrollState()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+//                                        .horizontalScroll(scrollState)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 20.dp)
+                ) {
+                    // 图片管理
+                    Spacer(modifier = Modifier.weight(1f))
+                    NavigateBarItem(
+                        imageVector = Icons.Default.Image,
+                        onClick = {
+                            selectedTab = 0
+                        },
+                        text = "图片管理",
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .padding(30.dp)
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    NavigateBarItem(
+                        imageVector = Icons.Default.Security,
+                        onClick = {
+                            selectedTab = 1
+                        },
+                        text = "检测功能",
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .padding(30.dp)
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    NavigateBarItem(
+                        imageVector = Icons.Default.Person,
+                        onClick = {
+                            selectedTab = 2
+                        },
+                        text = "个人中心",
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .padding(30.dp)
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }

@@ -20,18 +20,13 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun DetectionMainScreen(
     onLSBClick: () -> Unit,
-    onModelClick: () -> Unit,
-    onBack: () -> Unit
+    onModelClick: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("图片篡改检测") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                }
+                navigationIcon = {  }
             )
         }
     ) { paddingValues ->
