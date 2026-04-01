@@ -33,7 +33,6 @@ fun CompareDetectionScreen(
     
     var selectedOriginalImage by remember { mutableStateOf<ImageData?>(null) }
     var selectedFile by remember { mutableStateOf<File?>(null) }
-    var threshold by remember { mutableStateOf("0.1") }
     var showImageSelector by remember { mutableStateOf(false) }
     
     // 进入页面时清理上一次检测状态，并加载图片列表
@@ -117,24 +116,13 @@ fun CompareDetectionScreen(
                 )
             }
             
-            // 阈值
-            OutlinedTextField(
-                value = threshold,
-                onValueChange = { threshold = it },
-                label = { Text("差异阈值") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
             // 开始检测按钮
             Button(
                 onClick = {
                     if (selectedOriginalImage != null && selectedFile != null) {
-                        val thresholdFloat = threshold.toFloatOrNull() ?: 0.1f
                         viewModel.detectCompare(
                             selectedOriginalImage!!.id!!,
-                            selectedFile!!,
-                            threshold = thresholdFloat
+                            selectedFile!!
                         )
                     }
                 },

@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.bl2617.tamperrecovery.utils.Constants
 import com.bl2617.tamperrecovery.viewmodel.DetectionState
 import com.bl2617.tamperrecovery.viewmodel.DetectionViewModel
 import java.io.File
@@ -29,7 +30,7 @@ fun ModelDetectionScreen(
     val detectionState by viewModel.modelDetectionState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var selectedFile by remember { mutableStateOf<File?>(null) }
-    var confidenceThreshold by remember { mutableStateOf("0.5") }
+    var confidenceThreshold by remember { mutableStateOf("") }
 
     // 进入页面时清理上一次检测状态
     LaunchedEffect(Unit) {
@@ -90,20 +91,11 @@ fun ModelDetectionScreen(
                 )
             }
             
-            // 置信度阈值
-            OutlinedTextField(
-                value = confidenceThreshold,
-                onValueChange = { confidenceThreshold = it },
-                label = { Text("置信度阈值（默认0.5）") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
             // 开始检测按钮
             Button(
                 onClick = {
                     if (selectedFile != null) {
-                        val threshold = confidenceThreshold.toFloatOrNull() ?: 0.5f
+                        val threshold = confidenceThreshold.toFloatOrNull() ?: Constants.MODEL_DETECTION_THRESHOLD
                         viewModel.detectModel(selectedFile!!, threshold)
                     }
                 },

@@ -7,6 +7,7 @@ import com.bl2617.tamperrecovery.data.model.*
 import com.bl2617.tamperrecovery.data.repository.DetectionRepository
 import com.bl2617.tamperrecovery.data.repository.ImageRepository
 import com.bl2617.tamperrecovery.utils.AuthManager
+import com.bl2617.tamperrecovery.utils.Constants
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -78,12 +79,11 @@ class DetectionViewModel(
     fun detectCompare(
         originalImageId: String,
         imageFile: File,
-        blockSize: Int = 64,
-        threshold: Float = 0.1f
+        blockSize: Int = 64
     ) {
         viewModelScope.launch {
             _compareDetectionState.value = DetectionState.Loading
-            detectionRepository.detectCompare(originalImageId, imageFile, blockSize, threshold).fold(
+            detectionRepository.detectCompare(originalImageId, imageFile, blockSize).fold(
                 onSuccess = { response ->
                     _compareDetectionState.value = DetectionState.Success(response.data)
                 },
@@ -97,7 +97,7 @@ class DetectionViewModel(
     /**
      * 模型检测
      */
-    fun detectModel(imageFile: File, confidenceThreshold: Float = 0.5f) {
+    fun detectModel(imageFile: File, confidenceThreshold: Float = Constants.MODEL_DETECTION_THRESHOLD) {
         viewModelScope.launch {
             _modelDetectionState.value = DetectionState.Loading
             detectionRepository.detectModel(imageFile, confidenceThreshold).fold(

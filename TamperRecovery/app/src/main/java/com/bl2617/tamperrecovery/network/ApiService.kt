@@ -103,7 +103,6 @@ interface ApiService {
      * @param originalImageId 原图ID
      * @param file 待检测的图片文件
      * @param blockSize 块大小（默认64）
-     * @param threshold 差异阈值（默认0.1）
      * @return 检测结果
      */
     @Multipart
@@ -111,8 +110,7 @@ interface ApiService {
     suspend fun detectCompare(
         @Part("original_image_id") originalImageId: okhttp3.RequestBody,
         @Part file: MultipartBody.Part,
-        @Part("block_size") blockSize: okhttp3.RequestBody? = null,
-        @Part("threshold") threshold: okhttp3.RequestBody? = null
+        @Part("block_size") blockSize: okhttp3.RequestBody? = null
     ): Response<com.bl2617.tamperrecovery.data.model.BlockComparisonResponse>
     
     /**
@@ -138,26 +136,7 @@ interface ApiService {
     suspend fun getVisualization(
         @Path("detectionResultId") detectionResultId: String
     ): Response<ResponseBody>
-    
-    /**
-     * 获取被篡改的块信息
-     * @param detectionResultId 检测结果ID
-     * @return 块信息列表
-     */
-    @GET("api/recovery/blocks/{detectionResultId}")
-    suspend fun getTamperedBlocks(
-        @Path("detectionResultId") detectionResultId: String
-    ): Response<com.bl2617.tamperrecovery.data.model.TamperedBlocksResponse>
-    
-    /**
-     * 恢复被篡改的块
-     * @param request 恢复请求
-     * @return 恢复数据
-     */
-    @POST("api/recovery/restore-blocks")
-    suspend fun restoreBlocks(
-        @Body request: com.bl2617.tamperrecovery.data.model.RestoreBlocksRequest
-    ): Response<com.bl2617.tamperrecovery.data.model.RestoreBlocksResponse>
+
 }
 
 

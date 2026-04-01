@@ -76,8 +76,7 @@ class DetectionRepository(
     suspend fun detectCompare(
         originalImageId: String,
         imageFile: File,
-        blockSize: Int = 64,
-        threshold: Float = 0.1f
+        blockSize: Int = 64
     ): Result<BlockComparisonResponse> {
         return withContext(Dispatchers.IO) {
             try {
@@ -85,9 +84,8 @@ class DetectionRepository(
                 val filePart = MultipartBody.Part.createFormData("file", imageFile.name, requestFile)
                 val originalIdPart = originalImageId.toRequestBody("text/plain".toMediaTypeOrNull())
                 val blockSizePart = blockSize.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-                val thresholdPart = threshold.toString().toRequestBody("text/plain".toMediaTypeOrNull())
                 
-                val response = apiService.detectCompare(originalIdPart, filePart, blockSizePart, thresholdPart)
+                val response = apiService.detectCompare(originalIdPart, filePart, blockSizePart)
                 
                 if (response.isSuccessful && response.body() != null) {
                     val comparisonResponse = response.body()!!
@@ -173,64 +171,7 @@ class DetectionRepository(
         }
     }
     
-    /**
-     * 获取被篡改的块信息
-     */
-    suspend fun getTamperedBlocks(detectionResultId: String): Result<List<TamperedBlockInfo>> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val response = apiService.getTamperedBlocks(detectionResultId)
-                if (response.isSuccessful && response.body() != null) {
-                    val blocksResponse = response.body()!!
-                    if (blocksResponse.code == 200) {
-                        Result.success(blocksResponse.data)
-                    } else {
-                        Result.failure(
-                            Exception("获取块信息失败: ${blocksResponse.message}")
-                        )
-                    }
-                } else {
-                    Result.failure(
-                        Exception("网络请求失败: ${response.code()} ${response.message()}")
-                    )
-                }
-            } catch (e: Exception) {
-                Result.failure(e)
-            }
-        }
-    }
-    
-    /**
-     * 恢复被篡改的块
-     */
-    suspend fun restoreBlocks(
-        detectionResultId: String,
-        blockIndices: List<Int>
-    ): Result<List<RestoreBlockData>> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val request = RestoreBlocksRequest(detectionResultId, blockIndices)
-                val response = apiService.restoreBlocks(request)
-                
-                if (response.isSuccessful && response.body() != null) {
-                    val restoreResponse = response.body()!!
-                    if (restoreResponse.code == 200) {
-                        Result.success(restoreResponse.data)
-                    } else {
-                        Result.failure(
-                            Exception("恢复失败: ${restoreResponse.message}")
-                        )
-                    }
-                } else {
-                    Result.failure(
-                        Exception("网络请求失败: ${response.code()} ${response.message()}")
-                    )
-                }
-            } catch (e: Exception) {
-                Result.failure(e)
-            }
-        }
-    }
+
 }
 
 

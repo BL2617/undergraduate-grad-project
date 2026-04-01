@@ -1,16 +1,43 @@
 package com.bl2617.tamperrecovery.screens
 
-import androidx.compose.foundation.layout.*
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bl2617.tamperrecovery.data.model.DetectionResultData
@@ -28,14 +55,14 @@ fun DetectionResultScreen(
     onBack: () -> Unit
 ) {
     val visualizationState by viewModel.visualizationState.collectAsStateWithLifecycle()
-    
+
     // 加载可视化图片
     LaunchedEffect(result.id) {
         if (result.visualizationUrl != null) {
             viewModel.loadVisualization(result.id)
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -74,21 +101,21 @@ fun DetectionResultScreen(
                     Text(
                         text = if (result.isTampered) "检测到篡改" else "未检测到篡改",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        fontWeight = FontWeight.Bold,
                         color = if (result.isTampered) {
                             MaterialTheme.colorScheme.onErrorContainer
                         } else {
                             MaterialTheme.colorScheme.onPrimaryContainer
                         }
                     )
-                    
+
                     if (result.tamperRatioPercent != null) {
                         Text(
                             text = "篡改比例: ${String.format("%.2f", result.tamperRatioPercent)}%",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
-                    
+
                     if (result.confidence != null) {
                         Text(
                             text = "置信度: ${result.confidence}",
@@ -97,15 +124,15 @@ fun DetectionResultScreen(
                     }
                 }
             }
-            
+
             // 可视化图片
             if (result.visualizationUrl != null) {
                 Text(
                     text = "可视化结果",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    fontWeight = FontWeight.Bold
                 )
-                
+
                 when (val state = visualizationState) {
                     is VisualizationState.Loading -> {
                         Box(
@@ -117,8 +144,9 @@ fun DetectionResultScreen(
                             CircularProgressIndicator()
                         }
                     }
+
                     is VisualizationState.Success -> {
-                        androidx.compose.foundation.Image(
+                        Image(
                             bitmap = state.bitmap.asImageBitmap(),
                             contentDescription = "可视化结果",
                             modifier = Modifier
@@ -127,6 +155,7 @@ fun DetectionResultScreen(
                             contentScale = ContentScale.Fit
                         )
                     }
+
                     is VisualizationState.Error -> {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -141,18 +170,19 @@ fun DetectionResultScreen(
                             )
                         }
                     }
+
                     else -> {}
                 }
             }
-            
+
             // 篡改区域列表
             if (result.tamperedRegions != null && result.tamperedRegions.isNotEmpty()) {
                 Text(
                     text = "篡改区域",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    fontWeight = FontWeight.Bold
                 )
-                
+
                 result.tamperedRegions.forEachIndexed { index, region ->
                     Card(
                         modifier = Modifier.fillMaxWidth()
@@ -164,7 +194,7 @@ fun DetectionResultScreen(
                             Text(
                                 text = "区域 ${index + 1}",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                                fontWeight = FontWeight.Bold
                             )
                             Text("位置: (${region.x}, ${region.y})")
                             Text("尺寸: ${region.width} × ${region.height}")
@@ -175,7 +205,7 @@ fun DetectionResultScreen(
                     }
                 }
             }
-            
+
             // 检测信息
             Card(
                 modifier = Modifier.fillMaxWidth()
@@ -187,7 +217,7 @@ fun DetectionResultScreen(
                     Text(
                         text = "检测信息",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        fontWeight = FontWeight.Bold
                     )
                     Text("检测类型: ${result.detectionType}")
                     Text("检测结果ID: ${result.id}")

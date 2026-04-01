@@ -2,6 +2,8 @@ package com.bl2617.tamperrecovery.network
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
@@ -16,11 +18,8 @@ import java.util.concurrent.TimeUnit
  * 提供Retrofit实例和相关配置
  */
 object NetworkModule {
-    
-    // 基础URL - 根据实际后端地址修改
-    // 本地开发: http://192.168.0.103:8000/ (Android模拟器访问本地主机)
-    // 真机测试: http://your-computer-ip:8000/ (替换为你的电脑IP地址)
-    private const val BASE_URL = "http://192.168.5.35:8000/"
+
+    var BASE_URL = "http://192.168.100.185:8000/"
     
     // 是否开启日志，可以通过外部设置
     var isDebugMode: Boolean = true
@@ -29,6 +28,7 @@ object NetworkModule {
      * 初始化网络模块（可选）
      * @param context 用于检测是否为DEBUG模式
      */
+    @RequiresApi(Build.VERSION_CODES.DONUT)
     fun init(context: Context? = null) {
         if (context != null) {
             isDebugMode = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
