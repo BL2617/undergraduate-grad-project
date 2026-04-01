@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun DetectionMainScreen(
     onLSBClick: () -> Unit,
-    onCompareClick: () -> Unit,
     onModelClick: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -65,16 +64,7 @@ fun DetectionMainScreen(
                 onClick = onLSBClick,
                 modifier = Modifier.fillMaxWidth()
             )
-            
-            // 分块比对检测卡片
-            DetectionMethodCard(
-                title = "分块比对检测",
-                description = "选择原图与待检测图片进行分块比对，支持恢复被篡改的块",
-                icon = Icons.Default.Compare,
-                onClick = onCompareClick,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
+
             // 模型检测卡片
             DetectionMethodCard(
                 title = "模型检测",
